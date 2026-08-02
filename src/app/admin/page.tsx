@@ -26,7 +26,7 @@ export default async function AdminPage() {
               Тексты
             </h1>
             <p className="text-sm text-[var(--ink-soft)]">
-              {templates.length} шт. Откройте любой текст для визуальной правки разметки.
+              {templates.length} шт. Источник: Neon (если пусто — файлы в репо).
             </p>
           </div>
           <Link href="/admin/new" className="btn btn-primary">

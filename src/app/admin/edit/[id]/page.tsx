@@ -31,8 +31,8 @@ export default async function AdminEditPage({ params }: Props) {
           Редактировать: {template.title}
         </h1>
         <p className="mb-6 text-sm text-[var(--ink-soft)]">
-          Правьте разметку визуально. Пропуски уже отмечены (оранжевые блоки) — кликните,
-          чтобы изменить подсказку. Затем скачайте JSON и замените файл в репозитории.
+          Правьте разметку визуально, затем нажмите «Сохранить в базу» — изменения сразу
+          попадут в Neon и в игру.
         </p>
         <TemplateDraftForm initialTemplate={template} />
       </main>

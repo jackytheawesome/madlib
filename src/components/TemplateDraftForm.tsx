@@ -408,6 +408,9 @@ export function TemplateDraftForm({ initialTemplate }: { initialTemplate?: Templ
     templateId,
   ]);
 
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "ok" | "error">("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   function download() {
     applyHint();
     const blob = new Blob([JSON.stringify(jsonPreview, null, 2)], {
@@ -419,6 +422,32 @@ export function TemplateDraftForm({ initialTemplate }: { initialTemplate?: Templ
     a.download = `${jsonPreview.id}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function saveToDatabase() {
+    applyHint();
+    setSaveState("saving");
+    setSaveError(null);
+    try {
+      const res = await fetch("/api/admin/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(jsonPreview),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setSaveState("error");
+        setSaveError(data.error || "Ошибка сохранения");
+        return;
+      }
+      setSaveState("ok");
+      if (!isEdit) {
+        setTemplateId(String(jsonPreview.id));
+      }
+    } catch {
+      setSaveState("error");
+      setSaveError("Сеть недоступна");
+    }
   }
 
   function renderAtoms(list: Atom[], scope: "mono" | number) {
@@ -836,27 +865,37 @@ export function TemplateDraftForm({ initialTemplate }: { initialTemplate?: Templ
       <div className="panel space-y-3 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-[family-name:var(--font-display)] text-xl text-[var(--ink)]">
-            JSON
+            Сохранение
           </h2>
-          <button type="button" className="btn btn-primary" onClick={download}>
-            {isEdit ? "Скачать обновлённый JSON" : "Скачать JSON"}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={saveToDatabase}
+              disabled={saveState === "saving"}
+            >
+              {saveState === "saving" ? "Сохраняю…" : "Сохранить в базу"}
+            </button>
+            <button type="button" className="btn btn-secondary" onClick={download}>
+              Скачать JSON
+            </button>
+          </div>
         </div>
+        {saveState === "ok" && (
+          <p className="text-sm text-[var(--accent-2)]">
+            Сохранено в Neon. Текст сразу доступен в игре (без деплоя).
+          </p>
+        )}
+        {saveState === "error" && (
+          <p className="text-sm text-[var(--accent)]" role="alert">
+            {saveError}
+          </p>
+        )}
         <pre className="overflow-x-auto rounded-xl bg-[var(--ink)] p-4 text-xs leading-relaxed text-[var(--paper)]">
           {JSON.stringify(jsonPreview, null, 2)}
         </pre>
         <p className="text-xs text-[var(--ink-muted)]">
-          {isEdit ? (
-            <>
-              Замените файл <code>content/templates/{templateId || "…"}.json</code> в
-              репозитории и задеплойте.
-            </>
-          ) : (
-            <>
-              Положите файл в <code>content/templates/</code> и задеплойте — текст появится
-              в игре.
-            </>
-          )}
+          Основной способ — «Сохранить в базу». Скачивание JSON — запасной вариант / бэкап.
         </p>
       </div>
     </div>
