@@ -26,8 +26,7 @@ export default async function AdminPage() {
               Тексты
             </h1>
             <p className="text-sm text-[var(--ink-soft)]">
-              Пока правка через JSON в репозитории. Визуальный редактор разметки —
-              следующий шаг.
+              {templates.length} шт. Откройте любой текст для визуальной правки разметки.
             </p>
           </div>
           <Link href="/admin/new" className="btn btn-primary">
@@ -38,15 +37,21 @@ export default async function AdminPage() {
         <ul className="panel divide-y divide-[var(--line)]">
           {templates.map((t) => (
             <li key={t.id} className="flex items-center justify-between gap-3 px-4 py-3">
-              <div>
+              <div className="min-w-0">
                 <p className="font-medium text-[var(--ink)]">{t.title}</p>
                 <p className="text-sm text-[var(--ink-muted)]">
                   {KIND_LABELS[t.kind]} · {genreLabel(t.genre)} · {SIZE_LABELS[t.size]} ·{" "}
                   {t.blanks.length} пропусков
                   {t.kind === "dialogue" ? ` · ${t.playerCount} игрока` : ""}
                 </p>
+                <code className="text-xs text-[var(--ink-muted)]">{t.id}</code>
               </div>
-              <code className="text-xs text-[var(--ink-muted)]">{t.id}</code>
+              <Link
+                href={`/admin/edit/${encodeURIComponent(t.id)}`}
+                className="btn btn-secondary shrink-0"
+              >
+                Править
+              </Link>
             </li>
           ))}
         </ul>

@@ -1,13 +1,22 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
 import { BrandMark } from "@/components/BrandMark";
-import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { TemplateDraftForm } from "@/components/TemplateDraftForm";
+import { isAdminAuthenticated } from "@/lib/admin-auth";
+import { loadTemplate } from "@/lib/content";
 
-export default async function AdminNewPage() {
+type Props = {
+  params: Promise<{ id: string }>;
+};
+
+export default async function AdminEditPage({ params }: Props) {
   if (!(await isAdminAuthenticated())) {
     redirect("/admin/login");
   }
+
+  const { id } = await params;
+  const template = await loadTemplate(decodeURIComponent(id));
+  if (!template) notFound();
 
   return (
     <div className="relative flex flex-1 flex-col">
@@ -19,15 +28,13 @@ export default async function AdminNewPage() {
       </header>
       <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-8">
         <h1 className="mb-2 font-[family-name:var(--font-display)] text-3xl text-[var(--ink)]">
-          Новый текст
+          Редактировать: {template.title}
         </h1>
         <p className="mb-6 text-sm text-[var(--ink-soft)]">
-          Визуальная разметка: вставьте текст, кликните слова-пропуски, соберите
-          подсказку (часть речи, падеж…). Для диалогов у каждой реплики — кто говорит
-          и к кому. Пока сохранение через скачивание JSON в{" "}
-          <code>content/templates/</code>.
+          Правьте разметку визуально. Пропуски уже отмечены (оранжевые блоки) — кликните,
+          чтобы изменить подсказку. Затем скачайте JSON и замените файл в репозитории.
         </p>
-        <TemplateDraftForm />
+        <TemplateDraftForm initialTemplate={template} />
       </main>
     </div>
   );
