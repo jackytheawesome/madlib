@@ -1,0 +1,98 @@
+{
+  "id": "dialogue-romance-cafe-2",
+  "title": "Свидание в кафе",
+  "kind": "dialogue",
+  "genre": "romance",
+  "playerCount": 2,
+  "roles": ["Алекс", "Мила"],
+  "blanks": [
+    {
+      "id": "d1",
+      "hint": {
+        "prompt": "существительное, именительный падеж, единственное число",
+        "example": "круассан"
+      }
+    },
+    {
+      "id": "d2",
+      "hint": {
+        "prompt": "прилагательное, творительный падеж",
+        "example": "бархатным"
+      }
+    },
+    {
+      "id": "d3",
+      "hint": {
+        "prompt": "существительное, винительный падеж",
+        "example": "луну"
+      }
+    },
+    {
+      "id": "d4",
+      "hint": {
+        "prompt": "глагол, инфинитив",
+        "example": "танцевать"
+      }
+    },
+    {
+      "id": "d5",
+      "hint": {
+        "prompt": "существительное, родительный падеж, множественное число",
+        "example": "носков"
+      }
+    },
+    {
+      "id": "d6",
+      "hint": {
+        "prompt": "наречие",
+        "example": "страстно"
+      }
+    }
+  ],
+  "lines": [
+    {
+      "id": "l1",
+      "speakerRole": 0,
+      "addressRole": 1,
+      "segments": [
+        { "type": "text", "value": "Прости за опоздание. Я искал(а) для тебя идеальный " },
+        { "type": "blank", "blankId": "d1" },
+        { "type": "text", "value": "." }
+      ]
+    },
+    {
+      "id": "l2",
+      "speakerRole": 1,
+      "addressRole": 0,
+      "segments": [
+        { "type": "text", "value": "Ничего. Я уже заказал(а) чай с " },
+        { "type": "blank", "blankId": "d2" },
+        { "type": "text", "value": " ароматом. Расскажи, о чём ты думал(а) по дороге?" }
+      ]
+    },
+    {
+      "id": "l3",
+      "speakerRole": 0,
+      "addressRole": 1,
+      "segments": [
+        { "type": "text", "value": "О " },
+        { "type": "blank", "blankId": "d3" },
+        { "type": "text", "value": ". И о том, как хочется вместе " },
+        { "type": "blank", "blankId": "d4" },
+        { "type": "text", "value": "." }
+      ]
+    },
+    {
+      "id": "l4",
+      "speakerRole": 1,
+      "addressRole": 0,
+      "segments": [
+        { "type": "text", "value": "Тогда после кафе зайдём в магазин " },
+        { "type": "blank", "blankId": "d5" },
+        { "type": "text", "value": " — и продолжим. Только давай " },
+        { "type": "blank", "blankId": "d6" },
+        { "type": "text", "value": "!" }
+      ]
+    }
+  ]
+}

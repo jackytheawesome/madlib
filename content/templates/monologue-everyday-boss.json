@@ -1,0 +1,57 @@
+{
+  "id": "monologue-everyday-boss",
+  "title": "Письмо начальнику",
+  "kind": "monologue",
+  "genre": "everyday",
+  "playerCount": null,
+  "blanks": [
+    {
+      "id": "m1",
+      "hint": {
+        "prompt": "обращение или кличка, именительный падеж",
+        "example": "светоч"
+      }
+    },
+    {
+      "id": "m2",
+      "hint": {
+        "prompt": "существительное, родительный падеж",
+        "example": "дедлайна"
+      }
+    },
+    {
+      "id": "m3",
+      "hint": {
+        "prompt": "глагол, прошедшее время, множественное число",
+        "example": "взорвались"
+      }
+    },
+    {
+      "id": "m4",
+      "hint": {
+        "prompt": "существительное, творительный падеж, множественное число",
+        "example": "пончиками"
+      }
+    },
+    {
+      "id": "m5",
+      "hint": {
+        "prompt": "прилагательное, именительный падеж, средний род",
+        "example": "космическое"
+      }
+    }
+  ],
+  "segments": [
+    { "type": "text", "value": "Уважаемый(ая) " },
+    { "type": "blank", "blankId": "m1" },
+    { "type": "text", "value": "! Пишу по поводу " },
+    { "type": "blank", "blankId": "m2" },
+    { "type": "text", "value": ". Вчера мои планы внезапно " },
+    { "type": "blank", "blankId": "m3" },
+    { "type": "text", "value": ", поэтому я решаю всё " },
+    { "type": "blank", "blankId": "m4" },
+    { "type": "text", "value": ". Обещаю " },
+    { "type": "blank", "blankId": "m5" },
+    { "type": "text", "value": " настроение всей команде уже завтра. С уважением." }
+  ]
+}
