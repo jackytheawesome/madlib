@@ -6,6 +6,7 @@ import { GENRES, KIND_LABELS, MAX_PLAYERS, SIZE_LABELS } from "@/lib/types";
 import { fillSegments } from "@/lib/game";
 import { genreLabel } from "@/lib/content-shared";
 import { RANDOM_NICKNAMES, randomNickname } from "@/lib/nicknames";
+import { randomWordForHint } from "@/lib/random-words";
 import type { ClientMessage, RoomState } from "@/lib/room";
 
 type LocalPlayer = {
@@ -463,12 +464,28 @@ export function RoomClient({ code, solo }: Props) {
                         например: {blank.hint.example}
                       </span>
                     )}
-                    <input
-                      className="input"
-                      value={draft[id] ?? ""}
-                      onChange={(e) => setDraft((d) => ({ ...d, [id]: e.target.value }))}
-                      required
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        className="input min-w-0 flex-1"
+                        value={draft[id] ?? ""}
+                        onChange={(e) => setDraft((d) => ({ ...d, [id]: e.target.value }))}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-secondary shrink-0 px-3"
+                        title="Случайное слово"
+                        aria-label="Сгенерировать случайное слово"
+                        onClick={() =>
+                          setDraft((d) => ({
+                            ...d,
+                            [id]: randomWordForHint(blank.hint.prompt, d[id]),
+                          }))
+                        }
+                      >
+                        🎲
+                      </button>
+                    </div>
                   </label>
                 );
               })}
