@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createRoomCode } from "@/lib/game";
+import { RANDOM_NICKNAMES, randomNickname } from "@/lib/nicknames";
 
 export function HomeActions() {
   const router = useRouter();
@@ -19,6 +20,15 @@ export function HomeActions() {
       "chepuha-player",
       JSON.stringify({ id, nickname: nick, isHost, roomCode: code }),
     );
+  }
+
+  function rollNickname() {
+    let next = randomNickname();
+    if (next === nickname.trim() && RANDOM_NICKNAMES.length > 1) {
+      next = randomNickname();
+    }
+    setNickname(next);
+    setError(null);
   }
 
   function onCreate(e: React.FormEvent) {
@@ -61,17 +71,31 @@ export function HomeActions() {
     <div className="flex w-full max-w-md flex-col gap-6">
       <label className="flex flex-col gap-2">
         <span className="text-sm font-medium text-[var(--ink-soft)]">Твой ник</span>
-        <input
-          value={nickname}
-          onChange={(e) => {
-            setNickname(e.target.value);
-            setError(null);
-          }}
-          maxLength={24}
-          placeholder="например, Кефир"
-          className="input"
-          autoComplete="nickname"
-        />
+        <div className="flex gap-2">
+          <input
+            value={nickname}
+            onChange={(e) => {
+              setNickname(e.target.value);
+              setError(null);
+            }}
+            maxLength={24}
+            placeholder="например, Кефир"
+            className="input min-w-0 flex-1"
+            autoComplete="nickname"
+          />
+          <button
+            type="button"
+            className="btn btn-secondary shrink-0 px-3 sm:px-4"
+            onClick={rollNickname}
+            title="Случайный ник"
+            aria-label="Сгенерировать случайный ник"
+          >
+            <span className="sm:hidden" aria-hidden>
+              ∗
+            </span>
+            <span className="hidden sm:inline">Случ.</span>
+          </button>
+        </div>
       </label>
 
       {error && (
