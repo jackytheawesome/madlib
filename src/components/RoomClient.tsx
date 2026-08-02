@@ -526,18 +526,21 @@ function Reveal({
           {template.lines.map((line) => {
             const roleName = template.roles[line.speakerRole] ?? `Роль ${line.speakerRole + 1}`;
             const speakerId = roleToPlayer[line.speakerRole];
-            const addressRole =
-              line.addressRole != null ? (template.roles[line.addressRole] ?? null) : null;
             const addressId =
               line.addressRole != null ? roleToPlayer[line.addressRole] : undefined;
             const text = fillSegments(line.segments, answers);
+            const speakerLabel = speakerId ? nick(speakerId) : roleName;
+            const addressLabel =
+              line.addressRole != null
+                ? addressId
+                  ? nick(addressId)
+                  : (template.roles[line.addressRole] ?? `Роль ${line.addressRole + 1}`)
+                : null;
             return (
               <div key={line.id} className="rounded-2xl bg-[var(--paper-2)] p-4">
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">
-                  {speakerId ? `${nick(speakerId)} как «${roleName}»` : roleName}
-                  {addressRole
-                    ? ` → ${addressId ? `${nick(addressId)} («${addressRole}»)` : addressRole}`
-                    : ""}
+                  {speakerLabel}
+                  {addressLabel ? ` → ${addressLabel}` : ""}
                 </p>
                 <p className="text-lg leading-relaxed text-[var(--ink)]">
                   {highlight(text, answers)}
