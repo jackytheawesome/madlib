@@ -7,6 +7,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import type { Template } from "@/lib/types";
+import type { RoomState } from "@/lib/room";
 
 export const templates = pgTable("templates", {
   id: varchar("id", { length: 128 }).primaryKey(),
@@ -21,4 +22,12 @@ export const templates = pgTable("templates", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const rooms = pgTable("rooms", {
+  code: varchar("code", { length: 16 }).primaryKey(),
+  data: jsonb("data").$type<RoomState>().notNull(),
+  version: integer("version").notNull().default(0),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export type TemplateRow = typeof templates.$inferSelect;
+export type RoomRow = typeof rooms.$inferSelect;

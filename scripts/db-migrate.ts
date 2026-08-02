@@ -38,7 +38,16 @@ async function main() {
   await sql`CREATE INDEX IF NOT EXISTS templates_genre_idx ON templates (genre)`;
   await sql`CREATE INDEX IF NOT EXISTS templates_size_idx ON templates (size)`;
 
-  console.log("OK: templates table ready");
+  await sql`
+    CREATE TABLE IF NOT EXISTS rooms (
+      code varchar(16) PRIMARY KEY,
+      data jsonb NOT NULL,
+      version integer NOT NULL DEFAULT 0,
+      updated_at timestamptz NOT NULL DEFAULT now()
+    )
+  `;
+
+  console.log("OK: templates + rooms tables ready");
 }
 
 main().catch((err) => {

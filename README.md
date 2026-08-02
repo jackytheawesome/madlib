@@ -5,8 +5,7 @@
 ## Стек
 
 - **Next.js + TypeScript + Tailwind** → деплой на **Vercel**
-- **PartyKit** → realtime-комнаты (до 4 игроков)
-- Тексты в `content/templates/*.json` (в git, без отдельной БД)
+- **Neon Postgres** → тексты и синхронизация комнат (до 4 игроков)
 - Админка: `/admin` (пароль из env)
 
 ## Локальный запуск
@@ -14,12 +13,15 @@
 ```bash
 cp .env.example .env.local
 npm install
-npm run dev
+npm run db:migrate
+npm run dev:next
 ```
 
-Поднимутся Next.js и PartyKit (`127.0.0.1:1999`). Откройте [http://localhost:3000](http://localhost:3000).
+Откройте [http://localhost:3000](http://localhost:3000). Нужен `DATABASE_URL` (или `POSTGRES_URL`) — тот же Neon, что на Vercel.
 
 Админка: [http://localhost:3000/admin](http://localhost:3000/admin), пароль по умолчанию `chepuha`.
+
+`npm run dev` по-прежнему поднимает и локальный PartyKit — для продакшена комнаты идут через Neon API, PartyKit не обязателен.
 
 ## Правила продукта
 
@@ -46,14 +48,7 @@ npm run generate:templates
 
 ## Деплой
 
-1. **Vercel** — импорт репо `madlib`, env: `ADMIN_PASSWORD`, `ADMIN_SECRET`, `NEXT_PUBLIC_PARTYKIT_HOST`
-2. **PartyKit** — один раз:
+1. **Vercel** — репо `madlib`, env: `ADMIN_PASSWORD`, `ADMIN_SECRET`, `DATABASE_URL` (Neon)
+2. Один раз: `npm run db:migrate` (создаёт `templates` и `rooms`)
 
-```bash
-npx partykit login
-npm run deploy:party
-```
-
-В `NEXT_PUBLIC_PARTYKIT_HOST` на Vercel укажите хост из вывода деплоя (без `https://`).
-
-После этого комнаты с друзьями работают на проде.
+Комнаты синхронизируются через Neon — отдельно PartyKit на проде не нужен.

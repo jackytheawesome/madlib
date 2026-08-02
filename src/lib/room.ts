@@ -7,6 +7,8 @@ export type RoomPlayer = {
   nickname: string;
   connectionId: string;
   isHost: boolean;
+  /** epoch ms — для Neon-поллинга / отвала */
+  lastSeenAt?: number;
 };
 
 export type RoomState = {

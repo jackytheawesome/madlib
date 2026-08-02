@@ -1,13 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import usePartySocket from "partysocket/react";
 import type { Template, TextBlank, TextSize } from "@/lib/types";
 import { GENRES, KIND_LABELS, MAX_PLAYERS, SIZE_LABELS } from "@/lib/types";
 import { fillSegments } from "@/lib/game";
 import { genreLabel } from "@/lib/content-shared";
-import { getPartyKitHost } from "@/lib/partyhost";
-import type { ClientMessage, RoomState, ServerMessage } from "@/lib/room";
+import { RANDOM_NICKNAMES, randomNickname } from "@/lib/nicknames";
+import type { ClientMessage, RoomState } from "@/lib/room";
 
 type LocalPlayer = {
   id: string;
@@ -20,8 +19,24 @@ type Props = {
   solo: boolean;
 };
 
+const PLAYER_KEY = "chepuha-player";
+const POLL_MS = 1200;
+
+function newPlayerId() {
+  return typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `p-${Date.now()}`;
+}
+
+function savePlayer(player: LocalPlayer, roomCode: string) {
+  sessionStorage.setItem(PLAYER_KEY, JSON.stringify({ ...player, roomCode }));
+}
+
 export function RoomClient({ code, solo }: Props) {
   const [player, setPlayer] = useState<LocalPlayer | null>(null);
+  const [gateReady, setGateReady] = useState(false);
+  const [nickDraft, setNickDraft] = useState("");
+  const [nickError, setNickError] = useState<string | null>(null);
   const [state, setState] = useState<RoomState | null>(null);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [genreFilter, setGenreFilter] = useState("all");
@@ -30,21 +45,32 @@ export function RoomClient({ code, solo }: Props) {
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem("chepuha-player");
-    if (!raw) return;
+    const raw = sessionStorage.getItem(PLAYER_KEY);
+    if (!raw) {
+      setGateReady(true);
+      return;
+    }
     try {
       const parsed = JSON.parse(raw) as LocalPlayer & { roomCode?: string };
-      setPlayer({
-        id: parsed.id,
-        nickname: parsed.nickname,
-        isHost: parsed.isHost || solo,
-      });
+      const nick = parsed.nickname?.trim() ?? "";
+      const sameRoom = parsed.roomCode?.toUpperCase() === code.toUpperCase();
+      if (sameRoom && nick) {
+        setPlayer({
+          id: parsed.id,
+          nickname: nick,
+          isHost: Boolean(parsed.isHost) || solo,
+        });
+      } else if (nick) {
+        setNickDraft(nick);
+      }
     } catch {
-      setPlayer(null);
+      /* ignore */
     }
-  }, [solo]);
+    setGateReady(true);
+  }, [code, solo]);
 
   useEffect(() => {
     fetch("/api/templates")
@@ -53,43 +79,106 @@ export function RoomClient({ code, solo }: Props) {
       .catch(() => setTemplates([]));
   }, []);
 
-  const socket = usePartySocket({
-    host: getPartyKitHost(),
-    room: code,
-    onOpen() {
-      setConnected(true);
+  const postMessage = useCallback(
+    async (msg: ClientMessage, playerId: string) => {
+      const res = await fetch(`/api/rooms/${encodeURIComponent(code)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: msg, playerId }),
+      });
+      const data = (await res.json()) as { state?: RoomState; error?: string };
+      if (data.state) setState(data.state);
+      if (data.error) setError(data.error);
+      else setError(null);
+      setConnected(res.ok || Boolean(data.state));
+      return data;
     },
-    onClose() {
-      setConnected(false);
-    },
-    onMessage(event) {
-      try {
-        const msg = JSON.parse(String(event.data)) as ServerMessage;
-        if (msg.type === "state") setState(msg.state);
-        if (msg.type === "error") setError(msg.message);
-      } catch {
-        /* ignore */
-      }
-    },
-  });
-
-  useEffect(() => {
-    if (!player || !connected) return;
-    const msg: ClientMessage = {
-      type: "join",
-      playerId: player.id,
-      nickname: player.nickname,
-    };
-    socket.send(JSON.stringify(msg));
-  }, [player, connected, socket]);
+    [code],
+  );
 
   const send = useCallback(
     (msg: ClientMessage) => {
+      if (!player) return;
       setError(null);
-      socket.send(JSON.stringify(msg));
+      void postMessage(msg, player.id);
     },
-    [socket],
+    [player, postMessage],
   );
+
+  // join + poll
+  useEffect(() => {
+    if (!player) return;
+    let cancelled = false;
+
+    async function sync(join: boolean) {
+      try {
+        if (join) {
+          await postMessage(
+            { type: "join", playerId: player!.id, nickname: player!.nickname },
+            player!.id,
+          );
+        } else {
+          const res = await fetch(
+            `/api/rooms/${encodeURIComponent(code)}?playerId=${encodeURIComponent(player!.id)}`,
+          );
+          const data = (await res.json()) as { state?: RoomState; error?: string };
+          if (cancelled) return;
+          if (data.state) setState(data.state);
+          if (data.error) setError(data.error);
+          setConnected(res.ok);
+        }
+      } catch {
+        if (!cancelled) {
+          setConnected(false);
+          setError("Не удалось подключиться к комнате. Обнови страницу.");
+        }
+      }
+    }
+
+    void sync(true);
+    const timer = setInterval(() => void sync(false), POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [player, code, postMessage]);
+
+  function enterWithNickname(e: React.FormEvent) {
+    e.preventDefault();
+    const nick = nickDraft.trim();
+    if (!nick) {
+      setNickError("Напиши ник");
+      return;
+    }
+    const next: LocalPlayer = {
+      id: newPlayerId(),
+      nickname: nick,
+      isHost: solo,
+    };
+    savePlayer(next, code);
+    setPlayer(next);
+    setNickError(null);
+  }
+
+  function rollNickname() {
+    let next = randomNickname();
+    if (next === nickDraft.trim() && RANDOM_NICKNAMES.length > 1) {
+      next = randomNickname();
+    }
+    setNickDraft(next);
+    setNickError(null);
+  }
+
+  async function copyInviteLink() {
+    const url = `${window.location.origin}/room/${code}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      setError(`Ссылка: ${url}`);
+    }
+  }
 
   const me = state?.players.find((p) => p.id === player?.id);
   const playerCount = state?.players.length ?? 0;
@@ -134,13 +223,63 @@ export function RoomClient({ code, solo }: Props) {
     send({ type: "nextRound", mode: "random", template: tpl });
   }
 
+  if (!gateReady) {
+    return (
+      <div className="panel mx-auto max-w-lg p-6 text-center text-[var(--ink-soft)]">
+        Загрузка…
+      </div>
+    );
+  }
+
   if (!player) {
     return (
-      <div className="panel mx-auto max-w-lg p-6 text-center">
-        <p className="mb-4 text-[var(--ink-soft)]">Сначала укажи ник на главной.</p>
-        <a href="/" className="btn btn-primary inline-flex">
-          На главную
-        </a>
+      <div className="panel mx-auto max-w-lg space-y-5 p-6">
+        <div className="text-center">
+          <p className="text-sm text-[var(--ink-muted)]">Вход в комнату</p>
+          <p className="font-mono text-2xl tracking-[0.2em] text-[var(--ink)]">{code}</p>
+        </div>
+        <p className="text-center text-[var(--ink-soft)]">
+          Придумай ник — и сразу окажешься в лобби с друзьями.
+        </p>
+        <form onSubmit={enterWithNickname} className="flex flex-col gap-4">
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-[var(--ink-soft)]">Твой ник</span>
+            <div className="flex gap-2">
+              <input
+                value={nickDraft}
+                onChange={(e) => {
+                  setNickDraft(e.target.value);
+                  setNickError(null);
+                }}
+                maxLength={24}
+                placeholder="например, Кефир"
+                className="input min-w-0 flex-1"
+                autoComplete="nickname"
+                autoFocus
+              />
+              <button
+                type="button"
+                className="btn btn-secondary shrink-0 px-3 sm:px-4"
+                onClick={rollNickname}
+                title="Случайный ник"
+                aria-label="Сгенерировать случайный ник"
+              >
+                <span className="sm:hidden" aria-hidden>
+                  ∗
+                </span>
+                <span className="hidden sm:inline">Случ.</span>
+              </button>
+            </div>
+          </label>
+          {nickError && (
+            <p className="text-sm text-[var(--accent)]" role="alert">
+              {nickError}
+            </p>
+          )}
+          <button type="submit" className="btn btn-primary">
+            Войти в комнату
+          </button>
+        </form>
       </div>
     );
   }
@@ -167,7 +306,7 @@ export function RoomClient({ code, solo }: Props) {
         </div>
       </header>
 
-      {error && (
+      {(error) && (
         <p className="rounded-xl bg-[color-mix(in_oklab,var(--accent)_18%,white)] px-4 py-3 text-sm text-[var(--ink)]">
           {error}
         </p>
@@ -179,9 +318,14 @@ export function RoomClient({ code, solo }: Props) {
             Лобби
           </h2>
           <p className="text-[var(--ink-soft)]">
-            Поделись кодом <span className="font-mono font-semibold">{code}</span> с друзьями.
+            Поделись ссылкой или кодом <span className="font-mono font-semibold">{code}</span>.
             Когда все на месте — хост выбирает текст.
           </p>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="btn btn-secondary" onClick={copyInviteLink}>
+              {linkCopied ? "Ссылка скопирована" : "Скопировать ссылку"}
+            </button>
+          </div>
           <ul className="space-y-2">
             {(state?.players ?? []).map((p) => (
               <li
@@ -200,7 +344,7 @@ export function RoomClient({ code, solo }: Props) {
               type="button"
               className="btn btn-primary"
               onClick={() => send({ type: "setPhase", phase: "picking" })}
-              disabled={playerCount < 1}
+              disabled={playerCount < 1 || !connected}
             >
               Выбрать текст
             </button>
