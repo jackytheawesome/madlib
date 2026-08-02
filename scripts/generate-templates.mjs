@@ -1,37 +1,54 @@
 /**
- * Генератор демо-текстов «Чепуха».
+ * Генератор текстов «Чепуха».
+ * Каждый пропуск получает подсказку под грамматику слота.
  * Запуск: node scripts/generate-templates.mjs
+ *
+ * Не перезаписывает шаблоны из PROTECTED_IDS (правки из админки).
  */
-import { writeFileSync, mkdirSync, readdirSync, unlinkSync } from "node:fs";
+import { writeFileSync, mkdirSync, readdirSync, unlinkSync, existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(__dirname, "..", "content", "templates");
 
+/** ID, которые написала/правила пользовательница — не трогаем. */
+const PROTECTED_IDS = new Set(["story-horror-small-2"]);
+
 const GENRES = ["horror", "romance", "everyday", "adventure", "fairy"];
 const KINDS = ["story", "monologue", "dialogue"];
-const SIZES = ["small", "small", "medium", "medium", "long"]; // 5 слотов на комбо
+const SIZES = ["small", "small", "medium", "medium", "long"];
 const DIALOGUE_PLAYERS = [2, 2, 3, 3, 4];
 
-const HINTS = [
-  { prompt: "существительное, именительный падеж, единственное число", example: "утюг" },
-  { prompt: "существительное, винительный падеж", example: "кабачок" },
-  { prompt: "существительное, творительный падеж", example: "вареньем" },
-  { prompt: "существительное, родительный падеж, множественное число", example: "носков" },
-  { prompt: "прилагательное, именительный падеж", example: "липкий" },
-  { prompt: "прилагательное, творительный падеж", example: "бархатным" },
-  { prompt: "глагол, прошедшее время", example: "зашипел" },
-  { prompt: "глагол, инфинитив", example: "танцевать" },
-  { prompt: "наречие", example: "внезапно" },
-  { prompt: "междометие или возглас", example: "ой" },
-  { prompt: "имя собственное", example: "Вася" },
-  { prompt: "профессия или род занятий", example: "бариста" },
-  { prompt: "место, предложный падеж", example: "в подвале" },
-  { prompt: "часть тела, именительный падеж", example: "локоть" },
-  { prompt: "звук или шум", example: "бульк" },
-  { prompt: "чувство или эмоция", example: "тоска" },
-];
+/** Подсказки: ключ = роль в предложении */
+const H = {
+  nom: { prompt: "существительное, именительный падеж", example: "утюг" },
+  acc: { prompt: "существительное, винительный падеж", example: "кабачок" },
+  gen: { prompt: "существительное, родительный падеж", example: "варенья" },
+  genPl: { prompt: "существительное, родительный падеж, множественное число", example: "носков" },
+  dat: { prompt: "существительное, дательный падеж", example: "соседу" },
+  ins: { prompt: "существительное, творительный падеж", example: "вареньем" },
+  prepPlace: { prompt: "место в предложном падеже (без предлога)", example: "подвале" },
+  placeU: { prompt: "место после «у» (родительный падеж)", example: "фонтана" },
+  placeK: { prompt: "место после «к» (дательный падеж)", example: "маяку" },
+  placeV: { prompt: "место после «в/на» (куда?)", example: "подвал" },
+  adj: { prompt: "прилагательное", example: "липкий" },
+  adjIns: { prompt: "прилагательное, творительный падеж, женский род", example: "бархатной" },
+  adjShort: { prompt: "краткое прилагательное или оценка", example: "странный" },
+  verbPast: { prompt: "глагол, прошедшее время", example: "зашипел" },
+  verbPastPl: { prompt: "глагол, прошедшее время, множественное число", example: "танцевали" },
+  verbInf: { prompt: "глагол, инфинитив", example: "танцевать" },
+  verbImp: { prompt: "глагол, повелительное наклонение", example: "беги" },
+  adv: { prompt: "наречие", example: "внезапно" },
+  interj: { prompt: "междометие или возглас", example: "ой" },
+  name: { prompt: "имя собственное", example: "Вася" },
+  job: { prompt: "профессия или род занятий", example: "бариста" },
+  body: { prompt: "часть тела", example: "локоть" },
+  sound: { prompt: "звук или шум", example: "бульк" },
+  feeling: { prompt: "чувство или эмоция, родительный падеж", example: "тоски" },
+  number: { prompt: "число", example: "семь" },
+  phrase: { prompt: "короткая фраза или слово", example: "всё пропало" },
+};
 
 const TITLES = {
   story: {
@@ -78,15 +95,6 @@ const ROLES = {
   ],
 };
 
-function blanks(n, seed) {
-  const out = [];
-  for (let i = 0; i < n; i++) {
-    const h = HINTS[(seed + i * 3) % HINTS.length];
-    out.push({ id: `b${i + 1}`, hint: { ...h } });
-  }
-  return out;
-}
-
 function blankCount(size) {
   if (size === "small") return 5;
   if (size === "medium") return 9;
@@ -94,200 +102,484 @@ function blankCount(size) {
 }
 
 function segs(parts) {
-  /** parts: string | {b:id} */
   return parts.map((p) =>
     typeof p === "string" ? { type: "text", value: p } : { type: "blank", blankId: p.b },
   );
 }
 
-function B(i) {
-  return { b: `b${i}` };
+/** @param {number} i @param {{prompt:string, example:string}} hint */
+function B(i, hint) {
+  return { b: `b${i}`, hint };
 }
 
-/** Тексты-заготовки: функции (size) => segments или lines */
-function storyBody(genre, idx, size, n) {
-  const hooks = {
-    horror: [
-      ["Ночью я услышал ", B(1), ". За дверью стоял ", B(2), " с ", B(3), " улыбкой. Я ", B(4), " и крикнул «", B(5), "!»"],
-      ["В лифте погас свет. Кто-то шепнул ", B(1), ". Я потрогал ", B(2), " и понял: это был ", B(3), ". Двери открылись в ", B(4), ", пахло ", B(5), "."],
-    ],
-    romance: [
-      ["Утром я нашёл записку: «Встретимся у ", B(1), "». Там ждал ", B(2), " с букетом из ", B(3), ". Мы ", B(4), " под ", B(5), "."],
-      ["В парке шёл дождь и ", B(1), ". Я протянул ", B(2), " и сказал про ", B(3), ". Ответ был ", B(4), ", как ", B(5), "."],
-    ],
-    everyday: [
-      ["Будильник орал как ", B(1), ". Я надел ", B(2), " и споткнулся о ", B(3), ". В метро кто-то ", B(4), " с криком «", B(5), "!»"],
-      ["В очереди стоял ", B(1), ". Он обсуждал ", B(2), " и ел ", B(3), ". Кассир ", B(4), " и выдал ", B(5), "."],
-    ],
-    adventure: [
-      ["На карте было пятно в форме ", B(1), ". Мы взяли ", B(2), " и пошли к ", B(3), ". Там нас ждал ", B(4), ", который ", B(5), "."],
-      ["Шторм бил в борт. Капитан крикнул: «Держите ", B(1), "!» Юнга нёс ", B(2), ", а штурман ", B(3), ". Горизонт стал ", B(4), ", как ", B(5), "."],
-    ],
-    fairy: [
-      ["В чаще жил ", B(1), ", который варил ", B(2), ". Путник попросил ", B(3), ", а взамен получил ", B(4), " и совет: «Не ", B(5), "!»"],
-      ["Король объявил: «Кто принесёт ", B(1), ", получит ", B(2), "!» Герой взял ", B(3), ", подружился с ", B(4), " и ", B(5), "."],
-    ],
-  };
-  let base = hooks[genre][idx % hooks[genre].length];
-  if (size === "medium" || size === "long") {
-    base = [
-      ...base,
-      " Потом появился ",
-      B(6),
-      ", который предложил ",
-      B(7),
-      ". Все ",
-      B(8),
-      " от ",
-      B(9),
-      ".",
-    ];
-  }
-  if (size === "long") {
-    base = [
-      ...base,
-      " В финале герой достал ",
-      B(10),
-      ", произнёс ",
-      B(11),
-      " и увидел ",
-      B(12),
-      ". Мораль: береги ",
-      B(13),
-      " и не доверяй ",
-      B(14),
-      ".",
-    ];
-  }
-  // trim blanks to n
-  return segs(base).filter((s) => {
-    if (s.type === "blank") {
-      const num = Number(s.blankId.slice(1));
-      return num <= n;
+function collectBlanks(parts) {
+  const map = new Map();
+  for (const p of parts) {
+    if (typeof p === "object" && p.b && p.hint) {
+      map.set(p.b, { id: p.b, hint: { ...p.hint } });
     }
-    return true;
-  });
+  }
+  return [...map.values()].sort((a, b) => Number(a.id.slice(1)) - Number(b.id.slice(1)));
 }
 
-function monologueBody(genre, idx, size, n) {
-  const hooks = {
+function storyParts(genre, idx, size) {
+  const cores = {
     horror: [
-      ["Друзья, я сторож уже ", B(1), " лет. Ночью коридор пахнет ", B(2), ". Вчера розетка сказала «", B(3), "». Я ", B(4), " и схватил ", B(5), "."],
-      ["Это запись. Если слышите ", B(1), " — бегите. Я видел ", B(2), " в ", B(3), ". Он ", B(4), " мою ", B(5), "."],
+      [
+        "Ночью я услышал ",
+        B(1, H.sound),
+        ". За дверью стоял ",
+        B(2, H.nom),
+        " с ",
+        B(3, H.adjIns),
+        " улыбкой. Я ",
+        B(4, H.verbPast),
+        " и крикнул: ",
+        B(5, H.interj),
+        "!",
+      ],
+      [
+        "В лифте погас свет. Кто-то шепнул: ",
+        B(1, H.phrase),
+        ". Я потрогал ",
+        B(2, H.acc),
+        " и понял: это был ",
+        B(3, H.nom),
+        ". Двери открылись в ",
+        B(4, H.placeV),
+        ", пахло ",
+        B(5, H.ins),
+        ".",
+      ],
     ],
     romance: [
-      ["Слушай. Я стоял у ", B(1), " и думал о ", B(2), ". Хотел сказать, что ты — мой ", B(3), ". Вместо этого ", B(4), " и купил ", B(5), "."],
-      ["Тост! За ", B(1), ", за ", B(2), " и за то, что мы когда-то ", B(3), ". Пусть ваша любовь будет ", B(4), ", как ", B(5), "!"],
+      [
+        "Утром я нашёл записку: «Встретимся у ",
+        B(1, H.placeU),
+        "». Там ждал ",
+        B(2, H.name),
+        " с букетом из ",
+        B(3, H.genPl),
+        ". Мы ",
+        B(4, H.verbPastPl),
+        " под ",
+        B(5, H.ins),
+        ".",
+      ],
+      [
+        "В парке шёл дождь, и рядом ",
+        B(1, H.verbPast),
+        " ",
+        B(2, H.nom),
+        ". Я протянул ",
+        B(3, H.acc),
+        " и сказал про ",
+        B(4, H.acc),
+        ". Ответ был ",
+        B(5, H.adjShort),
+        ".",
+      ],
     ],
     everyday: [
-      ["Уважаемый ", B(1), "! Пишу про ", B(2), ". Вчера всё ", B(3), ", поэтому я решаю вопрос ", B(4), ". Обещаю ", B(5), " настроение."],
-      ["Отзыв: товар как ", B(1), ". Курьер был ", B(2), ", упаковка пахла ", B(3), ". Ставлю ", B(4), " из пяти и слово «", B(5), "»."],
+      [
+        "Будильник орал как ",
+        B(1, H.nom),
+        ". Я надел ",
+        B(2, H.acc),
+        " и споткнулся о ",
+        B(3, H.acc),
+        ". В метро кто-то ",
+        B(4, H.verbPast),
+        " с криком: ",
+        B(5, H.interj),
+        "!",
+      ],
+      [
+        "В очереди стоял ",
+        B(1, H.job),
+        ". Он обсуждал ",
+        B(2, H.acc),
+        " и ел ",
+        B(3, H.acc),
+        ". Кассир ",
+        B(4, H.verbPast),
+        " и выдал ",
+        B(5, H.acc),
+        ".",
+      ],
     ],
     adventure: [
-      ["День ", B(1), ". Мы у ", B(2), ". Запас ", B(3), " на исходе. Если услышите ", B(4), " — это я, а не ", B(5), "."],
-      ["Инструктаж: прыгаем с ", B(1), ". Держите ", B(2), ", не смотрите на ", B(3), ". Крикните «", B(4), "» и думайте о ", B(5), "."],
+      [
+        "На карте было пятно в форме ",
+        B(1, H.gen),
+        ". Мы взяли ",
+        B(2, H.acc),
+        " и пошли к ",
+        B(3, H.placeK),
+        ". Там нас ждал ",
+        B(4, H.nom),
+        ", который ",
+        B(5, H.verbPast),
+        ".",
+      ],
+      [
+        "Шторм бил в борт. Капитан крикнул: «Держите ",
+        B(1, H.acc),
+        "!» Юнга нёс ",
+        B(2, H.acc),
+        ", а штурман ",
+        B(3, H.verbPast),
+        ". Горизонт стал ",
+        B(4, H.adjShort),
+        ", как ",
+        B(5, H.nom),
+        ".",
+      ],
     ],
     fairy: [
-      ["Я — король ", B(1), ". Мой дворец из ", B(2), ". Враги боятся моего ", B(3), ". Сегодня я ", B(4), " и объявляю праздник ", B(5), "!"],
-      ["Жалоба: местные герои воруют ", B(1), ". Мой хвост теперь ", B(2), ". Прошу выдать ", B(3), " и запретить ", B(4), " без ", B(5), "."],
+      [
+        "В чаще жил ",
+        B(1, H.nom),
+        ", который варил ",
+        B(2, H.acc),
+        ". Путник попросил ",
+        B(3, H.acc),
+        ", а взамен получил ",
+        B(4, H.acc),
+        " и совет: «Не ",
+        B(5, H.verbImp),
+        "!»",
+      ],
+      [
+        "Король объявил: «Кто принесёт ",
+        B(1, H.acc),
+        ", получит ",
+        B(2, H.acc),
+        "!» Герой взял ",
+        B(3, H.acc),
+        ", подружился с ",
+        B(4, H.ins),
+        " и ",
+        B(5, H.verbPast),
+        ".",
+      ],
     ],
   };
-  let base = hooks[genre][idx % hooks[genre].length];
-  if (size !== "small") {
-    base = [...base, " Кроме того, напоминаю про ", B(6), ": это ", B(7), ", а не ", B(8), ". Иначе будет ", B(9), "."];
-  }
-  if (size === "long") {
-    base = [
-      ...base,
-      " В заключение: берегите ",
-      B(10),
-      ", слушайте ",
-      B(11),
-      ", не трогайте ",
-      B(12),
-      ". Подпись: ",
-      B(13),
-      ", хранитель ",
-      B(14),
+
+  let parts = [...cores[genre][idx % cores[genre].length]];
+
+  if (size === "medium" || size === "long") {
+    parts = [
+      ...parts,
+      " Потом появился ",
+      B(6, H.nom),
+      ", который предложил ",
+      B(7, H.verbInf),
+      ". Все ",
+      B(8, H.verbPastPl),
+      " от ",
+      B(9, H.feeling),
       ".",
     ];
   }
-  return segs(base).filter((s) => {
-    if (s.type === "blank") return Number(s.blankId.slice(1)) <= n;
-    return true;
-  });
+
+  if (size === "long") {
+    parts = [
+      ...parts,
+      " В финале герой достал ",
+      B(10, H.acc),
+      ", произнёс: ",
+      B(11, H.interj),
+      "! — и увидел ",
+      B(12, H.acc),
+      ". Мораль: береги ",
+      B(13, H.acc),
+      " и не доверяй ",
+      B(14, H.dat),
+      ".",
+    ];
+  }
+
+  return parts;
 }
 
-function dialogueBody(genre, idx, size, playerCount, n) {
+function monologueParts(genre, idx, size) {
+  const cores = {
+    horror: [
+      [
+        "Друзья, я сторож уже ",
+        B(1, H.number),
+        " лет. Ночью коридор пахнет ",
+        B(2, H.ins),
+        ". Вчера розетка сказала: ",
+        B(3, H.phrase),
+        ". Я ",
+        B(4, H.verbPast),
+        " и схватил ",
+        B(5, H.acc),
+        ".",
+      ],
+      [
+        "Это запись. Если слышите ",
+        B(1, H.acc),
+        " — бегите. Я видел ",
+        B(2, H.acc),
+        " в ",
+        B(3, H.prepPlace),
+        ". Он ",
+        B(4, H.verbPast),
+        " мою ",
+        B(5, H.acc),
+        ".",
+      ],
+    ],
+    romance: [
+      [
+        "Слушай. Я стоял у ",
+        B(1, H.placeU),
+        " и думал о ",
+        B(2, H.prepPlace),
+        ". Хотел сказать, что ты — мой ",
+        B(3, H.nom),
+        ". Вместо этого ",
+        B(4, H.verbPast),
+        " и купил ",
+        B(5, H.acc),
+        ".",
+      ],
+      [
+        "Тост! За ",
+        B(1, H.acc),
+        ", за ",
+        B(2, H.acc),
+        " и за то, что мы когда-то ",
+        B(3, H.verbPastPl),
+        ". Пусть ваша любовь будет ",
+        B(4, H.adjShort),
+        ", как ",
+        B(5, H.nom),
+        "!",
+      ],
+    ],
+    everyday: [
+      [
+        "Уважаемый ",
+        B(1, H.job),
+        "! Пишу про ",
+        B(2, H.acc),
+        ". Вчера всё ",
+        B(3, H.verbPast),
+        ", поэтому я решаю вопрос ",
+        B(4, H.adv),
+        ". Обещаю ",
+        B(5, H.verbInf),
+        " настроение.",
+      ],
+      [
+        "Отзыв: товар как ",
+        B(1, H.nom),
+        ". Курьер был ",
+        B(2, H.adjShort),
+        ", упаковка пахла ",
+        B(3, H.ins),
+        ". Ставлю ",
+        B(4, H.number),
+        " из пяти и слово: ",
+        B(5, H.interj),
+        ".",
+      ],
+    ],
+    adventure: [
+      [
+        "День ",
+        B(1, H.number),
+        ". Мы у ",
+        B(2, H.placeU),
+        ". Запас ",
+        B(3, H.gen),
+        " на исходе. Если услышите ",
+        B(4, H.acc),
+        " — это я, а не ",
+        B(5, H.nom),
+        ".",
+      ],
+      [
+        "Инструктаж: прыгаем с ",
+        B(1, H.gen),
+        ". Держите ",
+        B(2, H.acc),
+        ", не смотрите на ",
+        B(3, H.acc),
+        ". Крикните: ",
+        B(4, H.interj),
+        "! — и думайте о ",
+        B(5, H.prepPlace),
+        ".",
+      ],
+    ],
+    fairy: [
+      [
+        "Я — король ",
+        B(1, H.genPl),
+        ". Мой дворец из ",
+        B(2, H.gen),
+        ". Враги боятся моего ",
+        B(3, H.gen),
+        ". Сегодня я ",
+        B(4, H.verbPast),
+        " и объявляю праздник ",
+        B(5, H.gen),
+        "!",
+      ],
+      [
+        "Жалоба: местные герои воруют ",
+        B(1, H.acc),
+        ". Мой хвост теперь ",
+        B(2, H.adjShort),
+        ". Прошу выдать ",
+        B(3, H.acc),
+        " и запретить ",
+        B(4, H.verbInf),
+        " без ",
+        B(5, H.gen),
+        ".",
+      ],
+    ],
+  };
+
+  let parts = [...cores[genre][idx % cores[genre].length]];
+
+  if (size !== "small") {
+    parts = [
+      ...parts,
+      " Кроме того, напоминаю про ",
+      B(6, H.acc),
+      ": это ",
+      B(7, H.nom),
+      ", а не ",
+      B(8, H.nom),
+      ". Иначе будет ",
+      B(9, H.feeling),
+      ".",
+    ];
+  }
+
+  if (size === "long") {
+    parts = [
+      ...parts,
+      " В заключение: берегите ",
+      B(10, H.acc),
+      ", слушайте ",
+      B(11, H.acc),
+      ", не трогайте ",
+      B(12, H.acc),
+      ". Подпись: ",
+      B(13, H.name),
+      ", хранитель ",
+      B(14, H.gen),
+      ".",
+    ];
+  }
+
+  return parts;
+}
+
+function dialogueBuild(genre, idx, size, playerCount, n) {
   const roles = ROLES[playerCount][idx % ROLES[playerCount].length];
   const lines = [];
+  const hintMap = new Map();
   let bi = 1;
-  const take = () => {
-    if (bi > n) return null;
-    return B(bi++);
+
+  const take = (hint) => {
+    if (bi > n) throw new Error(`dialogue ${genre} ran out of blanks at b${bi}/${n}`);
+    const id = `b${bi}`;
+    hintMap.set(id, { id, hint: { ...hint } });
+    bi += 1;
+    return { b: id, hint };
   };
 
   const push = (speaker, address, parts) => {
-    const filtered = [];
-    for (const p of parts) {
-      if (typeof p === "string") filtered.push(p);
-      else if (p) filtered.push(p);
-    }
     lines.push({
       id: `l${lines.length + 1}`,
       speakerRole: speaker,
       ...(address != null ? { addressRole: address } : {}),
-      segments: segs(filtered),
+      segments: segs(parts),
     });
   };
 
-  // opening
-  push(0, 1, ["Слушай, тут пахнет ", take(), ". Ты тоже слышишь ", take(), "?"]);
-  push(1, 0, ["Да. И ещё вижу ", take(), ". Давай не будем ", take(), "."]);
+  const openings = {
+    horror: () => {
+      push(0, 1, ["Слушай, тут пахнет ", take(H.ins), ". Ты тоже слышишь ", take(H.acc), "?"]);
+      push(1, 0, ["Да. И ещё вижу ", take(H.acc), ". Давай не будем ", take(H.verbInf), "."]);
+    },
+    romance: () => {
+      push(0, 1, ["У тебя на столе лежит ", take(H.nom), ". Это намёк на ", take(H.acc), "?"]);
+      push(1, 0, ["Скорее на ", take(H.acc), ". Только не ", take(H.verbImp), " так громко."]);
+    },
+    everyday: () => {
+      push(0, 1, ["Опять очередь как ", take(H.nom), ". Ты взял ", take(H.acc), "?"]);
+      push(1, 0, ["Взял. Ещё и ", take(H.acc), ". Главное — не ", take(H.verbInf), " кассира."]);
+    },
+    adventure: () => {
+      push(0, 1, ["Карта показывает ", take(H.acc), ". Слышишь ", take(H.acc), "?"]);
+      push(1, 0, ["Слышу. Держи ", take(H.acc), " и не смей ", take(H.verbInf), "."]);
+    },
+    fairy: () => {
+      push(0, 1, ["Джинн обещал ", take(H.acc), ". Ты загадал ", take(H.acc), "?"]);
+      push(1, 0, ["Да, но получил ", take(H.acc), ". Теперь придётся ", take(H.verbInf), "."]);
+    },
+  };
+  openings[genre](); // 4 blanks
 
-  if (playerCount >= 3) {
-    push(2, 0, ["Стойте. Я нашёл ", take(), ". На бирке написано «", take(), "»."]);
-  }
-  if (playerCount >= 4) {
-    push(3, 2, ["Отлично. Теперь всем раздаём ", take(), " и шепчем ", take(), "."]);
-  }
-
-  if (size !== "small") {
-    push(0, playerCount > 1 ? 1 : undefined, [
-      "План такой: берём ",
-      take(),
-      ", идём к ",
-      take(),
-      " и ",
-      take(),
-      ".",
-    ]);
-    push(1, 0, ["Только без ", take(), ". В прошлый раз всё кончилось ", take(), "."]);
-  }
-
-  if (size === "long") {
-    push(0, undefined, [
-      "Итог: если появится ",
-      take(),
-      " — кричите «",
-      take(),
-      "» и держите ",
-      take(),
-      ".",
-    ]);
-    push(1, 0, ["Договорились. За ", take(), " и за то, что мы ещё ", take(), "!"]);
+  if (size === "small") {
+    push(0, 1, ["И ещё: не забудь ", take(H.acc), "."]);
+  } else if (size === "medium") {
+    // medium + 3 players: 4 + 2 + 3 = 9
     if (playerCount >= 3) {
-      push(2, undefined, ["Я всё записываю в ", take(), ". Заголовок: «", take(), "»."]);
+      push(2, 0, ["Стойте. Я нашёл ", take(H.acc), ". На бирке написано: ", take(H.phrase), "."]);
+    }
+    push(0, 1, [
+      "План: берём ",
+      take(H.acc),
+      ", идём к ",
+      take(H.placeK),
+      " и ",
+      take(H.verbInf),
+      ".",
+    ]);
+    if (playerCount < 3) {
+      push(1, 0, ["Только без ", take(H.gen), ". В прошлый раз всё кончилось ", take(H.ins), "."]);
+    }
+  } else {
+    // long + 4 players: 4 + 2 + 2 + 3 + 2 + 1 = 14
+    if (playerCount >= 3) {
+      push(2, 0, ["Стойте. Я нашёл ", take(H.acc), ". На бирке написано: ", take(H.phrase), "."]);
+    }
+    if (playerCount >= 4) {
+      push(3, 2, ["Раздаём всем ", take(H.acc), " и шепчем: ", take(H.interj), "."]);
+    }
+    push(0, 1, [
+      "План: берём ",
+      take(H.acc),
+      ", идём к ",
+      take(H.placeK),
+      " и ",
+      take(H.verbInf),
+      ".",
+    ]);
+    push(1, 0, ["Только без ", take(H.gen), ". Иначе снова кончится ", take(H.ins), "."]);
+    while (bi <= n) {
+      const speaker = (bi - 1) % playerCount;
+      push(speaker, (speaker + 1) % playerCount, ["И ещё: не забудьте ", take(H.verbInf), "."]);
     }
   }
 
-  // Ensure we used up to n blanks - pad last line if needed
-  while (bi <= n) {
-    const speaker = (lines.length) % playerCount;
-    push(speaker, (speaker + 1) % playerCount, ["И ещё одно: не забудьте ", take(), "."]);
+  if (bi - 1 !== n) {
+    throw new Error(`dialogue blank count ${bi - 1} !== ${n} (${genre}, ${size}, p${playerCount})`);
   }
 
-  return { roles, lines };
+  const blanks = [...hintMap.values()].sort((a, b) => Number(a.id.slice(1)) - Number(b.id.slice(1)));
+  return { roles, lines, blanks };
 }
 
 function buildTemplate(kind, genre, slot) {
@@ -296,23 +588,47 @@ function buildTemplate(kind, genre, slot) {
   const title = TITLES[kind][genre][slot];
   const id = `${kind}-${genre}-${size}-${slot + 1}`;
 
-  const base = {
+  if (kind === "dialogue") {
+    const playerCount = DIALOGUE_PLAYERS[slot];
+    const { roles, lines, blanks } = dialogueBuild(genre, slot, size, playerCount, n);
+    return { id, title, kind, genre, size, blanks, playerCount, roles, lines };
+  }
+
+  const parts = kind === "story" ? storyParts(genre, slot, size) : monologueParts(genre, slot, size);
+  const used = [];
+  const filtered = [];
+  for (const p of parts) {
+    if (typeof p === "string") {
+      filtered.push(p);
+    } else {
+      const num = Number(p.b.slice(1));
+      if (num <= n) {
+        filtered.push(p);
+        used.push(p);
+      }
+    }
+  }
+
+  return {
     id,
     title,
     kind,
     genre,
     size,
-    blanks: blanks(n, slot * 17 + GENRES.indexOf(genre) * 5 + KINDS.indexOf(kind)),
+    blanks: collectBlanks(used),
+    playerCount: null,
+    segments: segs(filtered),
   };
+}
 
-  if (kind === "dialogue") {
-    const playerCount = DIALOGUE_PLAYERS[slot];
-    const { roles, lines } = dialogueBody(genre, slot, size, playerCount, n);
-    return { ...base, playerCount, roles, lines };
+const preserved = new Map();
+if (existsSync(OUT)) {
+  for (const id of PROTECTED_IDS) {
+    const file = path.join(OUT, `${id}.json`);
+    if (existsSync(file)) {
+      preserved.set(id, readFileSync(file, "utf8"));
+    }
   }
-
-  const body = kind === "story" ? storyBody(genre, slot, size, n) : monologueBody(genre, slot, size, n);
-  return { ...base, playerCount: null, segments: body };
 }
 
 mkdirSync(OUT, { recursive: true });
@@ -321,15 +637,20 @@ for (const f of readdirSync(OUT)) {
 }
 
 let count = 0;
+let skipped = 0;
 for (const kind of KINDS) {
   for (const genre of GENRES) {
     for (let slot = 0; slot < 5; slot++) {
       const tpl = buildTemplate(kind, genre, slot);
-      const file = path.join(OUT, `${tpl.id}.json`);
-      writeFileSync(file, JSON.stringify(tpl, null, 2) + "\n");
-      count++;
+      if (PROTECTED_IDS.has(tpl.id) && preserved.has(tpl.id)) {
+        writeFileSync(path.join(OUT, `${tpl.id}.json`), preserved.get(tpl.id));
+        skipped += 1;
+        continue;
+      }
+      writeFileSync(path.join(OUT, `${tpl.id}.json`), JSON.stringify(tpl, null, 2) + "\n");
+      count += 1;
     }
   }
 }
 
-console.log(`Generated ${count} templates in ${OUT}`);
+console.log(`Generated ${count} templates, preserved ${skipped} protected in ${OUT}`);

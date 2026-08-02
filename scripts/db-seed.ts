@@ -12,6 +12,9 @@ import type { Template } from "../src/lib/types";
 
 config({ path: ".env.local" });
 
+/** Правки из админки — не перезаписываем при сиде. */
+const PROTECTED_IDS = new Set(["story-horror-small-2"]);
+
 async function main() {
   const url =
     process.env.DATABASE_URL ||
@@ -28,11 +31,17 @@ async function main() {
   const db = drizzle(neon(url));
 
   let n = 0;
+  let skipped = 0;
   for (const file of files) {
     const raw = await readFile(path.join(dir, file), "utf8");
     const data = JSON.parse(raw) as Template;
     if (!data.id || !data.title) {
       console.warn("skip invalid", file);
+      continue;
+    }
+    if (PROTECTED_IDS.has(data.id)) {
+      console.log("skip protected", data.id);
+      skipped++;
       continue;
     }
     await db
@@ -63,7 +72,7 @@ async function main() {
     n++;
   }
 
-  console.log(`Seeded ${n} templates`);
+  console.log(`Seeded ${n} templates, skipped ${skipped} protected`);
 }
 
 main().catch((err) => {

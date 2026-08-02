@@ -1,47 +1,46 @@
 {
   "id": "story-horror-small-2",
-  "title": "Шёпот в лифте",
   "kind": "story",
-  "genre": "horror",
   "size": "small",
+  "genre": "horror",
+  "title": "Шёпот в лифте",
   "blanks": [
     {
       "id": "b1",
       "hint": {
-        "prompt": "существительное, винительный падеж",
-        "example": "кабачок"
+        "prompt": "Существительное, междометие или звук",
+        "example": "Ёкарный бабай"
       }
     },
     {
       "id": "b2",
       "hint": {
-        "prompt": "прилагательное, именительный падеж",
-        "example": "липкий"
+        "prompt": "существительное (кто? что?)",
+        "example": "пол или чайник"
       }
     },
     {
       "id": "b3",
       "hint": {
-        "prompt": "глагол, инфинитив",
-        "example": "танцевать"
+        "prompt": "мифическое существо",
+        "example": "Дьявол"
       }
     },
     {
       "id": "b4",
       "hint": {
-        "prompt": "имя собственное",
-        "example": "Вася"
+        "prompt": "любое помещение, куда?",
+        "example": "кухню"
       }
     },
     {
       "id": "b5",
       "hint": {
-        "prompt": "часть тела, именительный падеж",
-        "example": "локоть"
+        "prompt": "Существительное – кем? чем?",
+        "example": "чаем"
       }
     }
   ],
-  "playerCount": null,
   "segments": [
     {
       "type": "text",
@@ -87,5 +86,6 @@
       "type": "text",
       "value": "."
     }
-  ]
+  ],
+  "playerCount": null
 }
