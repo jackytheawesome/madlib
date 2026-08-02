@@ -1,0 +1,91 @@
+{
+  "id": "monologue-everyday-small-1",
+  "title": "Письмо начальнику",
+  "kind": "monologue",
+  "genre": "everyday",
+  "size": "small",
+  "blanks": [
+    {
+      "id": "b1",
+      "hint": {
+        "prompt": "профессия или род занятий",
+        "example": "бариста"
+      }
+    },
+    {
+      "id": "b2",
+      "hint": {
+        "prompt": "звук или шум",
+        "example": "бульк"
+      }
+    },
+    {
+      "id": "b3",
+      "hint": {
+        "prompt": "существительное, винительный падеж",
+        "example": "кабачок"
+      }
+    },
+    {
+      "id": "b4",
+      "hint": {
+        "prompt": "прилагательное, именительный падеж",
+        "example": "липкий"
+      }
+    },
+    {
+      "id": "b5",
+      "hint": {
+        "prompt": "глагол, инфинитив",
+        "example": "танцевать"
+      }
+    }
+  ],
+  "playerCount": null,
+  "segments": [
+    {
+      "type": "text",
+      "value": "Уважаемый "
+    },
+    {
+      "type": "blank",
+      "blankId": "b1"
+    },
+    {
+      "type": "text",
+      "value": "! Пишу про "
+    },
+    {
+      "type": "blank",
+      "blankId": "b2"
+    },
+    {
+      "type": "text",
+      "value": ". Вчера всё "
+    },
+    {
+      "type": "blank",
+      "blankId": "b3"
+    },
+    {
+      "type": "text",
+      "value": ", поэтому я решаю вопрос "
+    },
+    {
+      "type": "blank",
+      "blankId": "b4"
+    },
+    {
+      "type": "text",
+      "value": ". Обещаю "
+    },
+    {
+      "type": "blank",
+      "blankId": "b5"
+    },
+    {
+      "type": "text",
+      "value": " настроение."
+    }
+  ]
+}

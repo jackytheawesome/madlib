@@ -1,0 +1,91 @@
+{
+  "id": "monologue-romance-small-2",
+  "title": "Сообщение, которое не отправил",
+  "kind": "monologue",
+  "genre": "romance",
+  "size": "small",
+  "blanks": [
+    {
+      "id": "b1",
+      "hint": {
+        "prompt": "глагол, инфинитив",
+        "example": "танцевать"
+      }
+    },
+    {
+      "id": "b2",
+      "hint": {
+        "prompt": "имя собственное",
+        "example": "Вася"
+      }
+    },
+    {
+      "id": "b3",
+      "hint": {
+        "prompt": "часть тела, именительный падеж",
+        "example": "локоть"
+      }
+    },
+    {
+      "id": "b4",
+      "hint": {
+        "prompt": "существительное, именительный падеж, единственное число",
+        "example": "утюг"
+      }
+    },
+    {
+      "id": "b5",
+      "hint": {
+        "prompt": "существительное, родительный падеж, множественное число",
+        "example": "носков"
+      }
+    }
+  ],
+  "playerCount": null,
+  "segments": [
+    {
+      "type": "text",
+      "value": "Тост! За "
+    },
+    {
+      "type": "blank",
+      "blankId": "b1"
+    },
+    {
+      "type": "text",
+      "value": ", за "
+    },
+    {
+      "type": "blank",
+      "blankId": "b2"
+    },
+    {
+      "type": "text",
+      "value": " и за то, что мы когда-то "
+    },
+    {
+      "type": "blank",
+      "blankId": "b3"
+    },
+    {
+      "type": "text",
+      "value": ". Пусть ваша любовь будет "
+    },
+    {
+      "type": "blank",
+      "blankId": "b4"
+    },
+    {
+      "type": "text",
+      "value": ", как "
+    },
+    {
+      "type": "blank",
+      "blankId": "b5"
+    },
+    {
+      "type": "text",
+      "value": "!"
+    }
+  ]
+}

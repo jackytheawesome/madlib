@@ -1,0 +1,349 @@
+{
+  "id": "dialogue-everyday-long-5",
+  "title": "Спор из-за пульта",
+  "kind": "dialogue",
+  "genre": "everyday",
+  "size": "long",
+  "blanks": [
+    {
+      "id": "b1",
+      "hint": {
+        "prompt": "существительное, именительный падеж, единственное число",
+        "example": "утюг"
+      }
+    },
+    {
+      "id": "b2",
+      "hint": {
+        "prompt": "существительное, родительный падеж, множественное число",
+        "example": "носков"
+      }
+    },
+    {
+      "id": "b3",
+      "hint": {
+        "prompt": "глагол, прошедшее время",
+        "example": "зашипел"
+      }
+    },
+    {
+      "id": "b4",
+      "hint": {
+        "prompt": "междометие или возглас",
+        "example": "ой"
+      }
+    },
+    {
+      "id": "b5",
+      "hint": {
+        "prompt": "место, предложный падеж",
+        "example": "в подвале"
+      }
+    },
+    {
+      "id": "b6",
+      "hint": {
+        "prompt": "чувство или эмоция",
+        "example": "тоска"
+      }
+    },
+    {
+      "id": "b7",
+      "hint": {
+        "prompt": "существительное, творительный падеж",
+        "example": "вареньем"
+      }
+    },
+    {
+      "id": "b8",
+      "hint": {
+        "prompt": "прилагательное, творительный падеж",
+        "example": "бархатным"
+      }
+    },
+    {
+      "id": "b9",
+      "hint": {
+        "prompt": "наречие",
+        "example": "внезапно"
+      }
+    },
+    {
+      "id": "b10",
+      "hint": {
+        "prompt": "профессия или род занятий",
+        "example": "бариста"
+      }
+    },
+    {
+      "id": "b11",
+      "hint": {
+        "prompt": "звук или шум",
+        "example": "бульк"
+      }
+    },
+    {
+      "id": "b12",
+      "hint": {
+        "prompt": "существительное, винительный падеж",
+        "example": "кабачок"
+      }
+    },
+    {
+      "id": "b13",
+      "hint": {
+        "prompt": "прилагательное, именительный падеж",
+        "example": "липкий"
+      }
+    },
+    {
+      "id": "b14",
+      "hint": {
+        "prompt": "глагол, инфинитив",
+        "example": "танцевать"
+      }
+    }
+  ],
+  "playerCount": 4,
+  "roles": [
+    "Аня",
+    "Боря",
+    "Вика",
+    "Гена"
+  ],
+  "lines": [
+    {
+      "id": "l1",
+      "speakerRole": 0,
+      "addressRole": 1,
+      "segments": [
+        {
+          "type": "text",
+          "value": "Слушай, тут пахнет "
+        },
+        {
+          "type": "blank",
+          "blankId": "b1"
+        },
+        {
+          "type": "text",
+          "value": ". Ты тоже слышишь "
+        },
+        {
+          "type": "blank",
+          "blankId": "b2"
+        },
+        {
+          "type": "text",
+          "value": "?"
+        }
+      ]
+    },
+    {
+      "id": "l2",
+      "speakerRole": 1,
+      "addressRole": 0,
+      "segments": [
+        {
+          "type": "text",
+          "value": "Да. И ещё вижу "
+        },
+        {
+          "type": "blank",
+          "blankId": "b3"
+        },
+        {
+          "type": "text",
+          "value": ". Давай не будем "
+        },
+        {
+          "type": "blank",
+          "blankId": "b4"
+        },
+        {
+          "type": "text",
+          "value": "."
+        }
+      ]
+    },
+    {
+      "id": "l3",
+      "speakerRole": 2,
+      "addressRole": 0,
+      "segments": [
+        {
+          "type": "text",
+          "value": "Стойте. Я нашёл "
+        },
+        {
+          "type": "blank",
+          "blankId": "b5"
+        },
+        {
+          "type": "text",
+          "value": ". На бирке написано «"
+        },
+        {
+          "type": "blank",
+          "blankId": "b6"
+        },
+        {
+          "type": "text",
+          "value": "»."
+        }
+      ]
+    },
+    {
+      "id": "l4",
+      "speakerRole": 3,
+      "addressRole": 2,
+      "segments": [
+        {
+          "type": "text",
+          "value": "Отлично. Теперь всем раздаём "
+        },
+        {
+          "type": "blank",
+          "blankId": "b7"
+        },
+        {
+          "type": "text",
+          "value": " и шепчем "
+        },
+        {
+          "type": "blank",
+          "blankId": "b8"
+        },
+        {
+          "type": "text",
+          "value": "."
+        }
+      ]
+    },
+    {
+      "id": "l5",
+      "speakerRole": 0,
+      "addressRole": 1,
+      "segments": [
+        {
+          "type": "text",
+          "value": "План такой: берём "
+        },
+        {
+          "type": "blank",
+          "blankId": "b9"
+        },
+        {
+          "type": "text",
+          "value": ", идём к "
+        },
+        {
+          "type": "blank",
+          "blankId": "b10"
+        },
+        {
+          "type": "text",
+          "value": " и "
+        },
+        {
+          "type": "blank",
+          "blankId": "b11"
+        },
+        {
+          "type": "text",
+          "value": "."
+        }
+      ]
+    },
+    {
+      "id": "l6",
+      "speakerRole": 1,
+      "addressRole": 0,
+      "segments": [
+        {
+          "type": "text",
+          "value": "Только без "
+        },
+        {
+          "type": "blank",
+          "blankId": "b12"
+        },
+        {
+          "type": "text",
+          "value": ". В прошлый раз всё кончилось "
+        },
+        {
+          "type": "blank",
+          "blankId": "b13"
+        },
+        {
+          "type": "text",
+          "value": "."
+        }
+      ]
+    },
+    {
+      "id": "l7",
+      "speakerRole": 0,
+      "segments": [
+        {
+          "type": "text",
+          "value": "Итог: если появится "
+        },
+        {
+          "type": "blank",
+          "blankId": "b14"
+        },
+        {
+          "type": "text",
+          "value": " — кричите «"
+        },
+        {
+          "type": "text",
+          "value": "» и держите "
+        },
+        {
+          "type": "text",
+          "value": "."
+        }
+      ]
+    },
+    {
+      "id": "l8",
+      "speakerRole": 1,
+      "addressRole": 0,
+      "segments": [
+        {
+          "type": "text",
+          "value": "Договорились. За "
+        },
+        {
+          "type": "text",
+          "value": " и за то, что мы ещё "
+        },
+        {
+          "type": "text",
+          "value": "!"
+        }
+      ]
+    },
+    {
+      "id": "l9",
+      "speakerRole": 2,
+      "segments": [
+        {
+          "type": "text",
+          "value": "Я всё записываю в "
+        },
+        {
+          "type": "text",
+          "value": ". Заголовок: «"
+        },
+        {
+          "type": "text",
+          "value": "»."
+        }
+      ]
+    }
+  ]
+}

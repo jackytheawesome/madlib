@@ -1,0 +1,234 @@
+{
+  "id": "monologue-adventure-long-5",
+  "title": "Рация на горе",
+  "kind": "monologue",
+  "genre": "adventure",
+  "size": "long",
+  "blanks": [
+    {
+      "id": "b1",
+      "hint": {
+        "prompt": "прилагательное, именительный падеж",
+        "example": "липкий"
+      }
+    },
+    {
+      "id": "b2",
+      "hint": {
+        "prompt": "глагол, инфинитив",
+        "example": "танцевать"
+      }
+    },
+    {
+      "id": "b3",
+      "hint": {
+        "prompt": "имя собственное",
+        "example": "Вася"
+      }
+    },
+    {
+      "id": "b4",
+      "hint": {
+        "prompt": "часть тела, именительный падеж",
+        "example": "локоть"
+      }
+    },
+    {
+      "id": "b5",
+      "hint": {
+        "prompt": "существительное, именительный падеж, единственное число",
+        "example": "утюг"
+      }
+    },
+    {
+      "id": "b6",
+      "hint": {
+        "prompt": "существительное, родительный падеж, множественное число",
+        "example": "носков"
+      }
+    },
+    {
+      "id": "b7",
+      "hint": {
+        "prompt": "глагол, прошедшее время",
+        "example": "зашипел"
+      }
+    },
+    {
+      "id": "b8",
+      "hint": {
+        "prompt": "междометие или возглас",
+        "example": "ой"
+      }
+    },
+    {
+      "id": "b9",
+      "hint": {
+        "prompt": "место, предложный падеж",
+        "example": "в подвале"
+      }
+    },
+    {
+      "id": "b10",
+      "hint": {
+        "prompt": "чувство или эмоция",
+        "example": "тоска"
+      }
+    },
+    {
+      "id": "b11",
+      "hint": {
+        "prompt": "существительное, творительный падеж",
+        "example": "вареньем"
+      }
+    },
+    {
+      "id": "b12",
+      "hint": {
+        "prompt": "прилагательное, творительный падеж",
+        "example": "бархатным"
+      }
+    },
+    {
+      "id": "b13",
+      "hint": {
+        "prompt": "наречие",
+        "example": "внезапно"
+      }
+    },
+    {
+      "id": "b14",
+      "hint": {
+        "prompt": "профессия или род занятий",
+        "example": "бариста"
+      }
+    }
+  ],
+  "playerCount": null,
+  "segments": [
+    {
+      "type": "text",
+      "value": "День "
+    },
+    {
+      "type": "blank",
+      "blankId": "b1"
+    },
+    {
+      "type": "text",
+      "value": ". Мы у "
+    },
+    {
+      "type": "blank",
+      "blankId": "b2"
+    },
+    {
+      "type": "text",
+      "value": ". Запас "
+    },
+    {
+      "type": "blank",
+      "blankId": "b3"
+    },
+    {
+      "type": "text",
+      "value": " на исходе. Если услышите "
+    },
+    {
+      "type": "blank",
+      "blankId": "b4"
+    },
+    {
+      "type": "text",
+      "value": " — это я, а не "
+    },
+    {
+      "type": "blank",
+      "blankId": "b5"
+    },
+    {
+      "type": "text",
+      "value": "."
+    },
+    {
+      "type": "text",
+      "value": " Кроме того, напоминаю про "
+    },
+    {
+      "type": "blank",
+      "blankId": "b6"
+    },
+    {
+      "type": "text",
+      "value": ": это "
+    },
+    {
+      "type": "blank",
+      "blankId": "b7"
+    },
+    {
+      "type": "text",
+      "value": ", а не "
+    },
+    {
+      "type": "blank",
+      "blankId": "b8"
+    },
+    {
+      "type": "text",
+      "value": ". Иначе будет "
+    },
+    {
+      "type": "blank",
+      "blankId": "b9"
+    },
+    {
+      "type": "text",
+      "value": "."
+    },
+    {
+      "type": "text",
+      "value": " В заключение: берегите "
+    },
+    {
+      "type": "blank",
+      "blankId": "b10"
+    },
+    {
+      "type": "text",
+      "value": ", слушайте "
+    },
+    {
+      "type": "blank",
+      "blankId": "b11"
+    },
+    {
+      "type": "text",
+      "value": ", не трогайте "
+    },
+    {
+      "type": "blank",
+      "blankId": "b12"
+    },
+    {
+      "type": "text",
+      "value": ". Подпись: "
+    },
+    {
+      "type": "blank",
+      "blankId": "b13"
+    },
+    {
+      "type": "text",
+      "value": ", хранитель "
+    },
+    {
+      "type": "blank",
+      "blankId": "b14"
+    },
+    {
+      "type": "text",
+      "value": "."
+    }
+  ]
+}

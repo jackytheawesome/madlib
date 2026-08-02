@@ -1,0 +1,91 @@
+{
+  "id": "story-romance-small-2",
+  "title": "Случай в парке",
+  "kind": "story",
+  "genre": "romance",
+  "size": "small",
+  "blanks": [
+    {
+      "id": "b1",
+      "hint": {
+        "prompt": "глагол, прошедшее время",
+        "example": "зашипел"
+      }
+    },
+    {
+      "id": "b2",
+      "hint": {
+        "prompt": "междометие или возглас",
+        "example": "ой"
+      }
+    },
+    {
+      "id": "b3",
+      "hint": {
+        "prompt": "место, предложный падеж",
+        "example": "в подвале"
+      }
+    },
+    {
+      "id": "b4",
+      "hint": {
+        "prompt": "чувство или эмоция",
+        "example": "тоска"
+      }
+    },
+    {
+      "id": "b5",
+      "hint": {
+        "prompt": "существительное, творительный падеж",
+        "example": "вареньем"
+      }
+    }
+  ],
+  "playerCount": null,
+  "segments": [
+    {
+      "type": "text",
+      "value": "В парке шёл дождь и "
+    },
+    {
+      "type": "blank",
+      "blankId": "b1"
+    },
+    {
+      "type": "text",
+      "value": ". Я протянул "
+    },
+    {
+      "type": "blank",
+      "blankId": "b2"
+    },
+    {
+      "type": "text",
+      "value": " и сказал про "
+    },
+    {
+      "type": "blank",
+      "blankId": "b3"
+    },
+    {
+      "type": "text",
+      "value": ". Ответ был "
+    },
+    {
+      "type": "blank",
+      "blankId": "b4"
+    },
+    {
+      "type": "text",
+      "value": ", как "
+    },
+    {
+      "type": "blank",
+      "blankId": "b5"
+    },
+    {
+      "type": "text",
+      "value": "."
+    }
+  ]
+}

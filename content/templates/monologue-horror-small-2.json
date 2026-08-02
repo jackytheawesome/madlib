@@ -1,0 +1,91 @@
+{
+  "id": "monologue-horror-small-2",
+  "title": "Голос из розетки",
+  "kind": "monologue",
+  "genre": "horror",
+  "size": "small",
+  "blanks": [
+    {
+      "id": "b1",
+      "hint": {
+        "prompt": "существительное, творительный падеж",
+        "example": "вареньем"
+      }
+    },
+    {
+      "id": "b2",
+      "hint": {
+        "prompt": "прилагательное, творительный падеж",
+        "example": "бархатным"
+      }
+    },
+    {
+      "id": "b3",
+      "hint": {
+        "prompt": "наречие",
+        "example": "внезапно"
+      }
+    },
+    {
+      "id": "b4",
+      "hint": {
+        "prompt": "профессия или род занятий",
+        "example": "бариста"
+      }
+    },
+    {
+      "id": "b5",
+      "hint": {
+        "prompt": "звук или шум",
+        "example": "бульк"
+      }
+    }
+  ],
+  "playerCount": null,
+  "segments": [
+    {
+      "type": "text",
+      "value": "Это запись. Если слышите "
+    },
+    {
+      "type": "blank",
+      "blankId": "b1"
+    },
+    {
+      "type": "text",
+      "value": " — бегите. Я видел "
+    },
+    {
+      "type": "blank",
+      "blankId": "b2"
+    },
+    {
+      "type": "text",
+      "value": " в "
+    },
+    {
+      "type": "blank",
+      "blankId": "b3"
+    },
+    {
+      "type": "text",
+      "value": ". Он "
+    },
+    {
+      "type": "blank",
+      "blankId": "b4"
+    },
+    {
+      "type": "text",
+      "value": " мою "
+    },
+    {
+      "type": "blank",
+      "blankId": "b5"
+    },
+    {
+      "type": "text",
+      "value": "."
+    }
+  ]
+}

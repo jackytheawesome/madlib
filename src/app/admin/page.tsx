@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { BrandMark } from "@/components/BrandMark";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { genreLabel, loadAllTemplates } from "@/lib/content";
-import { KIND_LABELS } from "@/lib/types";
+import { KIND_LABELS, SIZE_LABELS } from "@/lib/types";
 import { AdminLogoutButton } from "@/components/AdminLogoutButton";
 
 export default async function AdminPage() {
@@ -41,8 +41,8 @@ export default async function AdminPage() {
               <div>
                 <p className="font-medium text-[var(--ink)]">{t.title}</p>
                 <p className="text-sm text-[var(--ink-muted)]">
-                  {KIND_LABELS[t.kind]} · {genreLabel(t.genre)} · {t.blanks.length}{" "}
-                  пропусков
+                  {KIND_LABELS[t.kind]} · {genreLabel(t.genre)} · {SIZE_LABELS[t.size]} ·{" "}
+                  {t.blanks.length} пропусков
                   {t.kind === "dialogue" ? ` · ${t.playerCount} игрока` : ""}
                 </p>
               </div>

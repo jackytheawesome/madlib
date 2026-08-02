@@ -1,0 +1,91 @@
+{
+  "id": "story-horror-small-2",
+  "title": "Шёпот в лифте",
+  "kind": "story",
+  "genre": "horror",
+  "size": "small",
+  "blanks": [
+    {
+      "id": "b1",
+      "hint": {
+        "prompt": "существительное, винительный падеж",
+        "example": "кабачок"
+      }
+    },
+    {
+      "id": "b2",
+      "hint": {
+        "prompt": "прилагательное, именительный падеж",
+        "example": "липкий"
+      }
+    },
+    {
+      "id": "b3",
+      "hint": {
+        "prompt": "глагол, инфинитив",
+        "example": "танцевать"
+      }
+    },
+    {
+      "id": "b4",
+      "hint": {
+        "prompt": "имя собственное",
+        "example": "Вася"
+      }
+    },
+    {
+      "id": "b5",
+      "hint": {
+        "prompt": "часть тела, именительный падеж",
+        "example": "локоть"
+      }
+    }
+  ],
+  "playerCount": null,
+  "segments": [
+    {
+      "type": "text",
+      "value": "В лифте погас свет. Кто-то шепнул "
+    },
+    {
+      "type": "blank",
+      "blankId": "b1"
+    },
+    {
+      "type": "text",
+      "value": ". Я потрогал "
+    },
+    {
+      "type": "blank",
+      "blankId": "b2"
+    },
+    {
+      "type": "text",
+      "value": " и понял: это был "
+    },
+    {
+      "type": "blank",
+      "blankId": "b3"
+    },
+    {
+      "type": "text",
+      "value": ". Двери открылись в "
+    },
+    {
+      "type": "blank",
+      "blankId": "b4"
+    },
+    {
+      "type": "text",
+      "value": ", пахло "
+    },
+    {
+      "type": "blank",
+      "blankId": "b5"
+    },
+    {
+      "type": "text",
+      "value": "."
+    }
+  ]
+}

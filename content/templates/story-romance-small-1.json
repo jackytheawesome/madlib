@@ -1,0 +1,91 @@
+{
+  "id": "story-romance-small-1",
+  "title": "Письмо на рассвете",
+  "kind": "story",
+  "genre": "romance",
+  "size": "small",
+  "blanks": [
+    {
+      "id": "b1",
+      "hint": {
+        "prompt": "прилагательное, творительный падеж",
+        "example": "бархатным"
+      }
+    },
+    {
+      "id": "b2",
+      "hint": {
+        "prompt": "наречие",
+        "example": "внезапно"
+      }
+    },
+    {
+      "id": "b3",
+      "hint": {
+        "prompt": "профессия или род занятий",
+        "example": "бариста"
+      }
+    },
+    {
+      "id": "b4",
+      "hint": {
+        "prompt": "звук или шум",
+        "example": "бульк"
+      }
+    },
+    {
+      "id": "b5",
+      "hint": {
+        "prompt": "существительное, винительный падеж",
+        "example": "кабачок"
+      }
+    }
+  ],
+  "playerCount": null,
+  "segments": [
+    {
+      "type": "text",
+      "value": "Утром я нашёл записку: «Встретимся у "
+    },
+    {
+      "type": "blank",
+      "blankId": "b1"
+    },
+    {
+      "type": "text",
+      "value": "». Там ждал "
+    },
+    {
+      "type": "blank",
+      "blankId": "b2"
+    },
+    {
+      "type": "text",
+      "value": " с букетом из "
+    },
+    {
+      "type": "blank",
+      "blankId": "b3"
+    },
+    {
+      "type": "text",
+      "value": ". Мы "
+    },
+    {
+      "type": "blank",
+      "blankId": "b4"
+    },
+    {
+      "type": "text",
+      "value": " под "
+    },
+    {
+      "type": "blank",
+      "blankId": "b5"
+    },
+    {
+      "type": "text",
+      "value": "."
+    }
+  ]
+}

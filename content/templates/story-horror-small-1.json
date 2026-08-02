@@ -1,0 +1,91 @@
+{
+  "id": "story-horror-small-1",
+  "title": "Кто звонит в дверь",
+  "kind": "story",
+  "genre": "horror",
+  "size": "small",
+  "blanks": [
+    {
+      "id": "b1",
+      "hint": {
+        "prompt": "существительное, именительный падеж, единственное число",
+        "example": "утюг"
+      }
+    },
+    {
+      "id": "b2",
+      "hint": {
+        "prompt": "существительное, родительный падеж, множественное число",
+        "example": "носков"
+      }
+    },
+    {
+      "id": "b3",
+      "hint": {
+        "prompt": "глагол, прошедшее время",
+        "example": "зашипел"
+      }
+    },
+    {
+      "id": "b4",
+      "hint": {
+        "prompt": "междометие или возглас",
+        "example": "ой"
+      }
+    },
+    {
+      "id": "b5",
+      "hint": {
+        "prompt": "место, предложный падеж",
+        "example": "в подвале"
+      }
+    }
+  ],
+  "playerCount": null,
+  "segments": [
+    {
+      "type": "text",
+      "value": "Ночью я услышал "
+    },
+    {
+      "type": "blank",
+      "blankId": "b1"
+    },
+    {
+      "type": "text",
+      "value": ". За дверью стоял "
+    },
+    {
+      "type": "blank",
+      "blankId": "b2"
+    },
+    {
+      "type": "text",
+      "value": " с "
+    },
+    {
+      "type": "blank",
+      "blankId": "b3"
+    },
+    {
+      "type": "text",
+      "value": " улыбкой. Я "
+    },
+    {
+      "type": "blank",
+      "blankId": "b4"
+    },
+    {
+      "type": "text",
+      "value": " и крикнул «"
+    },
+    {
+      "type": "blank",
+      "blankId": "b5"
+    },
+    {
+      "type": "text",
+      "value": "!»"
+    }
+  ]
+}

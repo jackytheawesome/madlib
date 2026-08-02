@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { GenreId, TextKind } from "@/lib/types";
-import { GENRES, KIND_LABELS } from "@/lib/types";
+import type { GenreId, TextKind, TextSize } from "@/lib/types";
+import { GENRES, KIND_LABELS, SIZE_LABELS } from "@/lib/types";
 
 type DraftBlank = {
   id: string;
@@ -23,6 +23,7 @@ export function TemplateDraftForm() {
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<TextKind>("story");
   const [genre, setGenre] = useState<GenreId>("everyday");
+  const [size, setSize] = useState<TextSize>("small");
   const [playerCount, setPlayerCount] = useState(2);
   const [rolesRaw, setRolesRaw] = useState("Алекс, Мила");
   const [body, setBody] = useState(
@@ -47,7 +48,7 @@ export function TemplateDraftForm() {
   }));
 
   const jsonPreview = useMemo(() => {
-    const id = `${kind}-${genre}-${slugify(title || "draft")}`;
+    const id = `${kind}-${genre}-${size}-${slugify(title || "draft")}`;
     const blankByToken = Object.fromEntries(blanks.map((b) => [b.token, b]));
 
     function parseSegments(text: string) {
@@ -101,6 +102,7 @@ export function TemplateDraftForm() {
         title: title || "Без названия",
         kind,
         genre,
+        size,
         playerCount,
         roles,
         blanks: blankDefs,
@@ -113,11 +115,12 @@ export function TemplateDraftForm() {
       title: title || "Без названия",
       kind,
       genre,
+      size,
       playerCount: null,
       blanks: blankDefs,
       segments: parseSegments(body),
     };
-  }, [title, kind, genre, playerCount, rolesRaw, body, blanks]);
+  }, [title, kind, genre, size, playerCount, rolesRaw, body, blanks]);
 
   function download() {
     const blob = new Blob([JSON.stringify(jsonPreview, null, 2)], {
@@ -162,6 +165,20 @@ export function TemplateDraftForm() {
             {GENRES.map((g) => (
               <option key={g.id} value={g.id}>
                 {g.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-2">
+          <span className="text-sm text-[var(--ink-soft)]">Размер</span>
+          <select
+            className="input"
+            value={size}
+            onChange={(e) => setSize(e.target.value as TextSize)}
+          >
+            {(Object.keys(SIZE_LABELS) as TextSize[]).map((s) => (
+              <option key={s} value={s}>
+                {SIZE_LABELS[s]}
               </option>
             ))}
           </select>

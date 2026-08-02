@@ -1,0 +1,234 @@
+{
+  "id": "story-fairy-long-5",
+  "title": "Дворец из тумана",
+  "kind": "story",
+  "genre": "fairy",
+  "size": "long",
+  "blanks": [
+    {
+      "id": "b1",
+      "hint": {
+        "prompt": "наречие",
+        "example": "внезапно"
+      }
+    },
+    {
+      "id": "b2",
+      "hint": {
+        "prompt": "профессия или род занятий",
+        "example": "бариста"
+      }
+    },
+    {
+      "id": "b3",
+      "hint": {
+        "prompt": "звук или шум",
+        "example": "бульк"
+      }
+    },
+    {
+      "id": "b4",
+      "hint": {
+        "prompt": "существительное, винительный падеж",
+        "example": "кабачок"
+      }
+    },
+    {
+      "id": "b5",
+      "hint": {
+        "prompt": "прилагательное, именительный падеж",
+        "example": "липкий"
+      }
+    },
+    {
+      "id": "b6",
+      "hint": {
+        "prompt": "глагол, инфинитив",
+        "example": "танцевать"
+      }
+    },
+    {
+      "id": "b7",
+      "hint": {
+        "prompt": "имя собственное",
+        "example": "Вася"
+      }
+    },
+    {
+      "id": "b8",
+      "hint": {
+        "prompt": "часть тела, именительный падеж",
+        "example": "локоть"
+      }
+    },
+    {
+      "id": "b9",
+      "hint": {
+        "prompt": "существительное, именительный падеж, единственное число",
+        "example": "утюг"
+      }
+    },
+    {
+      "id": "b10",
+      "hint": {
+        "prompt": "существительное, родительный падеж, множественное число",
+        "example": "носков"
+      }
+    },
+    {
+      "id": "b11",
+      "hint": {
+        "prompt": "глагол, прошедшее время",
+        "example": "зашипел"
+      }
+    },
+    {
+      "id": "b12",
+      "hint": {
+        "prompt": "междометие или возглас",
+        "example": "ой"
+      }
+    },
+    {
+      "id": "b13",
+      "hint": {
+        "prompt": "место, предложный падеж",
+        "example": "в подвале"
+      }
+    },
+    {
+      "id": "b14",
+      "hint": {
+        "prompt": "чувство или эмоция",
+        "example": "тоска"
+      }
+    }
+  ],
+  "playerCount": null,
+  "segments": [
+    {
+      "type": "text",
+      "value": "В чаще жил "
+    },
+    {
+      "type": "blank",
+      "blankId": "b1"
+    },
+    {
+      "type": "text",
+      "value": ", который варил "
+    },
+    {
+      "type": "blank",
+      "blankId": "b2"
+    },
+    {
+      "type": "text",
+      "value": ". Путник попросил "
+    },
+    {
+      "type": "blank",
+      "blankId": "b3"
+    },
+    {
+      "type": "text",
+      "value": ", а взамен получил "
+    },
+    {
+      "type": "blank",
+      "blankId": "b4"
+    },
+    {
+      "type": "text",
+      "value": " и совет: «Не "
+    },
+    {
+      "type": "blank",
+      "blankId": "b5"
+    },
+    {
+      "type": "text",
+      "value": "!»"
+    },
+    {
+      "type": "text",
+      "value": " Потом появился "
+    },
+    {
+      "type": "blank",
+      "blankId": "b6"
+    },
+    {
+      "type": "text",
+      "value": ", который предложил "
+    },
+    {
+      "type": "blank",
+      "blankId": "b7"
+    },
+    {
+      "type": "text",
+      "value": ". Все "
+    },
+    {
+      "type": "blank",
+      "blankId": "b8"
+    },
+    {
+      "type": "text",
+      "value": " от "
+    },
+    {
+      "type": "blank",
+      "blankId": "b9"
+    },
+    {
+      "type": "text",
+      "value": "."
+    },
+    {
+      "type": "text",
+      "value": " В финале герой достал "
+    },
+    {
+      "type": "blank",
+      "blankId": "b10"
+    },
+    {
+      "type": "text",
+      "value": ", произнёс "
+    },
+    {
+      "type": "blank",
+      "blankId": "b11"
+    },
+    {
+      "type": "text",
+      "value": " и увидел "
+    },
+    {
+      "type": "blank",
+      "blankId": "b12"
+    },
+    {
+      "type": "text",
+      "value": ". Мораль: береги "
+    },
+    {
+      "type": "blank",
+      "blankId": "b13"
+    },
+    {
+      "type": "text",
+      "value": " и не доверяй "
+    },
+    {
+      "type": "blank",
+      "blankId": "b14"
+    },
+    {
+      "type": "text",
+      "value": "."
+    }
+  ]
+}

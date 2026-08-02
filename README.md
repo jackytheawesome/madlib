@@ -5,9 +5,9 @@
 ## Стек
 
 - **Next.js + TypeScript + Tailwind** → деплой на **Vercel**
+- **PartyKit** → realtime-комнаты (до 4 игроков)
 - Тексты в `content/templates/*.json` (в git, без отдельной БД)
 - Админка: `/admin` (пароль из env)
-- Мультиплеер комнат: следующий шаг (PartyKit / аналог рядом с Vercel)
 
 ## Локальный запуск
 
@@ -17,37 +17,43 @@ npm install
 npm run dev
 ```
 
-Откройте [http://localhost:3000](http://localhost:3000).
+Поднимутся Next.js и PartyKit (`127.0.0.1:1999`). Откройте [http://localhost:3000](http://localhost:3000).
 
-Админка: [http://localhost:3000/admin](http://localhost:3000/admin)  
-Пароль по умолчанию из `.env.example`: `chepuha`.
+Админка: [http://localhost:3000/admin](http://localhost:3000/admin), пароль по умолчанию `chepuha`.
 
-## Правила продукта (зафиксировано)
+## Правила продукта
 
 | Тема | Решение |
 |------|---------|
-| Название | Чепуха (место под лого на главной) |
+| Название | Чепуха |
 | Язык UI | только RU |
 | Лимит комнаты | 4 |
 | Обычный режим | поля делятся случайно и равномерно |
-| Диалоги | только шаблоны с `playerCount` = числу игроков в комнате; роли авто |
-| После результата | другой текст (случайный или выбор типа/жанра) |
-| Модерация слов | нет |
-| Админка | веб, с логином |
+| Диалоги | только шаблоны с `playerCount` = числу игроков |
+| Размер текста | маленький / средний / длинный |
+| После результата | другой текст (случайный или выбор) |
+| Модерация | нет |
 
 ## Контент
 
-Формат шаблона — см. файлы в `content/templates/`.
+75 стартовых текстов: 3 типа × 5 жанров × 5 штук (с разным размером).
 
-- `monologue` / `story` — `segments` + `blanks`, `playerCount: null`
-- `dialogue` — `roles`, `lines[]` с `speakerRole` / `addressRole`, обязательный `playerCount` 2–4
+Перегенерация демо-набора:
 
-В админке `/admin/new` можно разметить текст маркерами `{{1}}`, задать подсказки и скачать JSON в `content/templates/`.
+```bash
+npm run generate:templates
+```
 
-## Vercel
+## Деплой
 
-1. Импортируйте репозиторий в Vercel
-2. Задайте `ADMIN_PASSWORD` и `ADMIN_SECRET`
-3. Deploy
+1. **Vercel** — импорт репо `madlib`, env: `ADMIN_PASSWORD`, `ADMIN_SECRET`, `NEXT_PUBLIC_PARTYKIT_HOST`
+2. **PartyKit** — один раз:
 
-Комнаты с друзьями в realtime появятся после подключения PartyKit (или Ably) — UI лобби и игровой цикл уже заложены.
+```bash
+npx partykit login
+npm run deploy:party
+```
+
+В `NEXT_PUBLIC_PARTYKIT_HOST` на Vercel укажите хост из вывода деплоя (без `https://`).
+
+После этого комнаты с друзьями работают на проде.

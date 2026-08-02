@@ -1,0 +1,234 @@
+{
+  "id": "story-adventure-long-5",
+  "title": "Ключ от маяка",
+  "kind": "story",
+  "genre": "adventure",
+  "size": "long",
+  "blanks": [
+    {
+      "id": "b1",
+      "hint": {
+        "prompt": "существительное, родительный падеж, множественное число",
+        "example": "носков"
+      }
+    },
+    {
+      "id": "b2",
+      "hint": {
+        "prompt": "глагол, прошедшее время",
+        "example": "зашипел"
+      }
+    },
+    {
+      "id": "b3",
+      "hint": {
+        "prompt": "междометие или возглас",
+        "example": "ой"
+      }
+    },
+    {
+      "id": "b4",
+      "hint": {
+        "prompt": "место, предложный падеж",
+        "example": "в подвале"
+      }
+    },
+    {
+      "id": "b5",
+      "hint": {
+        "prompt": "чувство или эмоция",
+        "example": "тоска"
+      }
+    },
+    {
+      "id": "b6",
+      "hint": {
+        "prompt": "существительное, творительный падеж",
+        "example": "вареньем"
+      }
+    },
+    {
+      "id": "b7",
+      "hint": {
+        "prompt": "прилагательное, творительный падеж",
+        "example": "бархатным"
+      }
+    },
+    {
+      "id": "b8",
+      "hint": {
+        "prompt": "наречие",
+        "example": "внезапно"
+      }
+    },
+    {
+      "id": "b9",
+      "hint": {
+        "prompt": "профессия или род занятий",
+        "example": "бариста"
+      }
+    },
+    {
+      "id": "b10",
+      "hint": {
+        "prompt": "звук или шум",
+        "example": "бульк"
+      }
+    },
+    {
+      "id": "b11",
+      "hint": {
+        "prompt": "существительное, винительный падеж",
+        "example": "кабачок"
+      }
+    },
+    {
+      "id": "b12",
+      "hint": {
+        "prompt": "прилагательное, именительный падеж",
+        "example": "липкий"
+      }
+    },
+    {
+      "id": "b13",
+      "hint": {
+        "prompt": "глагол, инфинитив",
+        "example": "танцевать"
+      }
+    },
+    {
+      "id": "b14",
+      "hint": {
+        "prompt": "имя собственное",
+        "example": "Вася"
+      }
+    }
+  ],
+  "playerCount": null,
+  "segments": [
+    {
+      "type": "text",
+      "value": "На карте было пятно в форме "
+    },
+    {
+      "type": "blank",
+      "blankId": "b1"
+    },
+    {
+      "type": "text",
+      "value": ". Мы взяли "
+    },
+    {
+      "type": "blank",
+      "blankId": "b2"
+    },
+    {
+      "type": "text",
+      "value": " и пошли к "
+    },
+    {
+      "type": "blank",
+      "blankId": "b3"
+    },
+    {
+      "type": "text",
+      "value": ". Там нас ждал "
+    },
+    {
+      "type": "blank",
+      "blankId": "b4"
+    },
+    {
+      "type": "text",
+      "value": ", который "
+    },
+    {
+      "type": "blank",
+      "blankId": "b5"
+    },
+    {
+      "type": "text",
+      "value": "."
+    },
+    {
+      "type": "text",
+      "value": " Потом появился "
+    },
+    {
+      "type": "blank",
+      "blankId": "b6"
+    },
+    {
+      "type": "text",
+      "value": ", который предложил "
+    },
+    {
+      "type": "blank",
+      "blankId": "b7"
+    },
+    {
+      "type": "text",
+      "value": ". Все "
+    },
+    {
+      "type": "blank",
+      "blankId": "b8"
+    },
+    {
+      "type": "text",
+      "value": " от "
+    },
+    {
+      "type": "blank",
+      "blankId": "b9"
+    },
+    {
+      "type": "text",
+      "value": "."
+    },
+    {
+      "type": "text",
+      "value": " В финале герой достал "
+    },
+    {
+      "type": "blank",
+      "blankId": "b10"
+    },
+    {
+      "type": "text",
+      "value": ", произнёс "
+    },
+    {
+      "type": "blank",
+      "blankId": "b11"
+    },
+    {
+      "type": "text",
+      "value": " и увидел "
+    },
+    {
+      "type": "blank",
+      "blankId": "b12"
+    },
+    {
+      "type": "text",
+      "value": ". Мораль: береги "
+    },
+    {
+      "type": "blank",
+      "blankId": "b13"
+    },
+    {
+      "type": "text",
+      "value": " и не доверяй "
+    },
+    {
+      "type": "blank",
+      "blankId": "b14"
+    },
+    {
+      "type": "text",
+      "value": "."
+    }
+  ]
+}

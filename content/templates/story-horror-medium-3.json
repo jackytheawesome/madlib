@@ -1,0 +1,155 @@
+{
+  "id": "story-horror-medium-3",
+  "title": "Последний автобус",
+  "kind": "story",
+  "genre": "horror",
+  "size": "medium",
+  "blanks": [
+    {
+      "id": "b1",
+      "hint": {
+        "prompt": "существительное, творительный падеж",
+        "example": "вареньем"
+      }
+    },
+    {
+      "id": "b2",
+      "hint": {
+        "prompt": "прилагательное, творительный падеж",
+        "example": "бархатным"
+      }
+    },
+    {
+      "id": "b3",
+      "hint": {
+        "prompt": "наречие",
+        "example": "внезапно"
+      }
+    },
+    {
+      "id": "b4",
+      "hint": {
+        "prompt": "профессия или род занятий",
+        "example": "бариста"
+      }
+    },
+    {
+      "id": "b5",
+      "hint": {
+        "prompt": "звук или шум",
+        "example": "бульк"
+      }
+    },
+    {
+      "id": "b6",
+      "hint": {
+        "prompt": "существительное, винительный падеж",
+        "example": "кабачок"
+      }
+    },
+    {
+      "id": "b7",
+      "hint": {
+        "prompt": "прилагательное, именительный падеж",
+        "example": "липкий"
+      }
+    },
+    {
+      "id": "b8",
+      "hint": {
+        "prompt": "глагол, инфинитив",
+        "example": "танцевать"
+      }
+    },
+    {
+      "id": "b9",
+      "hint": {
+        "prompt": "имя собственное",
+        "example": "Вася"
+      }
+    }
+  ],
+  "playerCount": null,
+  "segments": [
+    {
+      "type": "text",
+      "value": "Ночью я услышал "
+    },
+    {
+      "type": "blank",
+      "blankId": "b1"
+    },
+    {
+      "type": "text",
+      "value": ". За дверью стоял "
+    },
+    {
+      "type": "blank",
+      "blankId": "b2"
+    },
+    {
+      "type": "text",
+      "value": " с "
+    },
+    {
+      "type": "blank",
+      "blankId": "b3"
+    },
+    {
+      "type": "text",
+      "value": " улыбкой. Я "
+    },
+    {
+      "type": "blank",
+      "blankId": "b4"
+    },
+    {
+      "type": "text",
+      "value": " и крикнул «"
+    },
+    {
+      "type": "blank",
+      "blankId": "b5"
+    },
+    {
+      "type": "text",
+      "value": "!»"
+    },
+    {
+      "type": "text",
+      "value": " Потом появился "
+    },
+    {
+      "type": "blank",
+      "blankId": "b6"
+    },
+    {
+      "type": "text",
+      "value": ", который предложил "
+    },
+    {
+      "type": "blank",
+      "blankId": "b7"
+    },
+    {
+      "type": "text",
+      "value": ". Все "
+    },
+    {
+      "type": "blank",
+      "blankId": "b8"
+    },
+    {
+      "type": "text",
+      "value": " от "
+    },
+    {
+      "type": "blank",
+      "blankId": "b9"
+    },
+    {
+      "type": "text",
+      "value": "."
+    }
+  ]
+}

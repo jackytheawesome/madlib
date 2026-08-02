@@ -1,0 +1,215 @@
+{
+  "id": "dialogue-horror-medium-3",
+  "title": "Экскурсия в музей",
+  "kind": "dialogue",
+  "genre": "horror",
+  "size": "medium",
+  "blanks": [
+    {
+      "id": "b1",
+      "hint": {
+        "prompt": "прилагательное, именительный падеж",
+        "example": "липкий"
+      }
+    },
+    {
+      "id": "b2",
+      "hint": {
+        "prompt": "глагол, инфинитив",
+        "example": "танцевать"
+      }
+    },
+    {
+      "id": "b3",
+      "hint": {
+        "prompt": "имя собственное",
+        "example": "Вася"
+      }
+    },
+    {
+      "id": "b4",
+      "hint": {
+        "prompt": "часть тела, именительный падеж",
+        "example": "локоть"
+      }
+    },
+    {
+      "id": "b5",
+      "hint": {
+        "prompt": "существительное, именительный падеж, единственное число",
+        "example": "утюг"
+      }
+    },
+    {
+      "id": "b6",
+      "hint": {
+        "prompt": "существительное, родительный падеж, множественное число",
+        "example": "носков"
+      }
+    },
+    {
+      "id": "b7",
+      "hint": {
+        "prompt": "глагол, прошедшее время",
+        "example": "зашипел"
+      }
+    },
+    {
+      "id": "b8",
+      "hint": {
+        "prompt": "междометие или возглас",
+        "example": "ой"
+      }
+    },
+    {
+      "id": "b9",
+      "hint": {
+        "prompt": "место, предложный падеж",
+        "example": "в подвале"
+      }
+    }
+  ],
+  "playerCount": 3,
+  "roles": [
+    "Мама",
+    "Папа",
+    "Ребёнок"
+  ],
+  "lines": [
+    {
+      "id": "l1",
+      "speakerRole": 0,
+      "addressRole": 1,
+      "segments": [
+        {
+          "type": "text",
+          "value": "Слушай, тут пахнет "
+        },
+        {
+          "type": "blank",
+          "blankId": "b1"
+        },
+        {
+          "type": "text",
+          "value": ". Ты тоже слышишь "
+        },
+        {
+          "type": "blank",
+          "blankId": "b2"
+        },
+        {
+          "type": "text",
+          "value": "?"
+        }
+      ]
+    },
+    {
+      "id": "l2",
+      "speakerRole": 1,
+      "addressRole": 0,
+      "segments": [
+        {
+          "type": "text",
+          "value": "Да. И ещё вижу "
+        },
+        {
+          "type": "blank",
+          "blankId": "b3"
+        },
+        {
+          "type": "text",
+          "value": ". Давай не будем "
+        },
+        {
+          "type": "blank",
+          "blankId": "b4"
+        },
+        {
+          "type": "text",
+          "value": "."
+        }
+      ]
+    },
+    {
+      "id": "l3",
+      "speakerRole": 2,
+      "addressRole": 0,
+      "segments": [
+        {
+          "type": "text",
+          "value": "Стойте. Я нашёл "
+        },
+        {
+          "type": "blank",
+          "blankId": "b5"
+        },
+        {
+          "type": "text",
+          "value": ". На бирке написано «"
+        },
+        {
+          "type": "blank",
+          "blankId": "b6"
+        },
+        {
+          "type": "text",
+          "value": "»."
+        }
+      ]
+    },
+    {
+      "id": "l4",
+      "speakerRole": 0,
+      "addressRole": 1,
+      "segments": [
+        {
+          "type": "text",
+          "value": "План такой: берём "
+        },
+        {
+          "type": "blank",
+          "blankId": "b7"
+        },
+        {
+          "type": "text",
+          "value": ", идём к "
+        },
+        {
+          "type": "blank",
+          "blankId": "b8"
+        },
+        {
+          "type": "text",
+          "value": " и "
+        },
+        {
+          "type": "blank",
+          "blankId": "b9"
+        },
+        {
+          "type": "text",
+          "value": "."
+        }
+      ]
+    },
+    {
+      "id": "l5",
+      "speakerRole": 1,
+      "addressRole": 0,
+      "segments": [
+        {
+          "type": "text",
+          "value": "Только без "
+        },
+        {
+          "type": "text",
+          "value": ". В прошлый раз всё кончилось "
+        },
+        {
+          "type": "text",
+          "value": "."
+        }
+      ]
+    }
+  ]
+}

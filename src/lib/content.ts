@@ -1,6 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import type { GenreId, Template, TextKind } from "./types";
+import type { GenreId, Template, TextKind, TextSize } from "./types";
 import { GENRES } from "./types";
 
 const CONTENT_DIR = path.join(process.cwd(), "content", "templates");
@@ -35,12 +35,14 @@ export function filterTemplates(
   opts: {
     kind?: TextKind;
     genre?: GenreId;
+    size?: TextSize;
     playerCount?: number;
   },
 ): Template[] {
   return templates.filter((t) => {
     if (opts.kind && t.kind !== opts.kind) return false;
     if (opts.genre && t.genre !== opts.genre) return false;
+    if (opts.size && t.size !== opts.size) return false;
     if (opts.playerCount != null) {
       if (t.kind === "dialogue") {
         return t.playerCount === opts.playerCount;

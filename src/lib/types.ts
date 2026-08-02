@@ -2,6 +2,8 @@
 
 export type TextKind = "monologue" | "dialogue" | "story";
 
+export type TextSize = "small" | "medium" | "long";
+
 export type GenreId =
   | "horror"
   | "romance"
@@ -40,6 +42,7 @@ export type TemplateBase = {
   title: string;
   kind: TextKind;
   genre: GenreId;
+  size: TextSize;
   /** Для диалогов — ровно столько игроков нужно в комнате */
   playerCount: number | null;
   blanks: TextBlank[];
@@ -78,6 +81,12 @@ export const KIND_LABELS: Record<TextKind, string> = {
   monologue: "Монолог",
   dialogue: "Диалог",
   story: "Рассказ",
+};
+
+export const SIZE_LABELS: Record<TextSize, string> = {
+  small: "Маленький",
+  medium: "Средний",
+  long: "Длинный",
 };
 
 export const MAX_PLAYERS = 4;
