@@ -17,7 +17,6 @@ type LocalPlayer = {
 
 type Props = {
   code: string;
-  solo: boolean;
 };
 
 const PLAYER_KEY = "chepuha-player";
@@ -33,7 +32,7 @@ function savePlayer(player: LocalPlayer, roomCode: string) {
   sessionStorage.setItem(PLAYER_KEY, JSON.stringify({ ...player, roomCode }));
 }
 
-export function RoomClient({ code, solo }: Props) {
+export function RoomClient({ code }: Props) {
   const [player, setPlayer] = useState<LocalPlayer | null>(null);
   const [gateReady, setGateReady] = useState(false);
   const [nickDraft, setNickDraft] = useState("");
@@ -62,7 +61,7 @@ export function RoomClient({ code, solo }: Props) {
         setPlayer({
           id: parsed.id,
           nickname: nick,
-          isHost: Boolean(parsed.isHost) || solo,
+          isHost: Boolean(parsed.isHost),
         });
       } else if (nick) {
         setNickDraft(nick);
@@ -71,7 +70,7 @@ export function RoomClient({ code, solo }: Props) {
       /* ignore */
     }
     setGateReady(true);
-  }, [code, solo]);
+  }, [code]);
 
   useEffect(() => {
     fetch("/api/templates")
@@ -154,7 +153,7 @@ export function RoomClient({ code, solo }: Props) {
     const next: LocalPlayer = {
       id: newPlayerId(),
       nickname: nick,
-      isHost: solo,
+      isHost: false,
     };
     savePlayer(next, code);
     setPlayer(next);
@@ -298,7 +297,6 @@ export function RoomClient({ code, solo }: Props) {
           <p>
             Ты: <span className="font-medium text-[var(--ink)]">{player.nickname}</span>
             {isHost ? " · хост" : ""}
-            {solo ? " · соло" : ""}
           </p>
           <p className="text-[var(--ink-muted)]">
             Игроков: {playerCount}/{MAX_PLAYERS}

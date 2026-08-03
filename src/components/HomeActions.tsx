@@ -59,14 +59,6 @@ export function HomeActions() {
     router.push(`/room/${code}`);
   }
 
-  function onSolo(e: React.FormEvent) {
-    e.preventDefault();
-    const nick = nickname.trim() || "Одиночка";
-    const code = createRoomCode();
-    savePlayer(nick, true, code);
-    router.push(`/room/${code}?solo=1`);
-  }
-
   return (
     <div className="flex w-full max-w-md flex-col gap-6">
       <label className="flex flex-col gap-2">
@@ -127,12 +119,6 @@ export function HomeActions() {
         </label>
         <button type="submit" className="btn btn-secondary">
           Войти в комнату
-        </button>
-      </form>
-
-      <form onSubmit={onSolo}>
-        <button type="submit" className="btn btn-ghost w-full">
-          Играть одному
         </button>
       </form>
     </div>
