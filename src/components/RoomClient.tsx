@@ -264,10 +264,7 @@ export function RoomClient({ code }: Props) {
                 title="Случайный ник"
                 aria-label="Сгенерировать случайный ник"
               >
-                <span className="sm:hidden" aria-hidden>
-                  ∗
-                </span>
-                <span className="hidden sm:inline">Случ.</span>
+                <span aria-hidden>🎲</span>
               </button>
             </div>
           </label>

@@ -9,7 +9,8 @@ export function HomeActions() {
   const router = useRouter();
   const [nickname, setNickname] = useState("");
   const [joinCode, setJoinCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   function savePlayer(nick: string, isHost: boolean, code: string) {
     const id =
@@ -28,14 +29,14 @@ export function HomeActions() {
       next = randomNickname();
     }
     setNickname(next);
-    setError(null);
+    setCreateError(null);
   }
 
   function onCreate(e: React.FormEvent) {
     e.preventDefault();
     const nick = nickname.trim();
     if (!nick) {
-      setError("Напиши ник");
+      setCreateError("Напиши ник");
       return;
     }
     const code = createRoomCode();
@@ -45,22 +46,17 @@ export function HomeActions() {
 
   function onJoin(e: React.FormEvent) {
     e.preventDefault();
-    const nick = nickname.trim();
     const code = joinCode.trim().toUpperCase();
-    if (!nick) {
-      setError("Напиши ник");
-      return;
-    }
     if (code.length < 4) {
-      setError("Введи код комнаты");
+      setJoinError("Введи код комнаты");
       return;
     }
-    savePlayer(nick, false, code);
+    setJoinError(null);
     router.push(`/room/${code}`);
   }
 
   return (
-    <div className="flex w-full max-w-md flex-col gap-12">
+    <div className="flex w-full max-w-md flex-col gap-24">
       <div className="flex flex-col gap-6">
         <label className="flex flex-col gap-2">
           <span className="text-sm font-medium text-[var(--ink-soft)]">Твой ник</span>
@@ -69,7 +65,7 @@ export function HomeActions() {
               value={nickname}
               onChange={(e) => {
                 setNickname(e.target.value);
-                setError(null);
+                setCreateError(null);
               }}
               maxLength={24}
               placeholder="например, Кефир"
@@ -88,9 +84,9 @@ export function HomeActions() {
           </div>
         </label>
 
-        {error && (
+        {createError && (
           <p className="text-sm text-[var(--accent)]" role="alert">
-            {error}
+            {createError}
           </p>
         )}
 
@@ -108,7 +104,7 @@ export function HomeActions() {
             value={joinCode}
             onChange={(e) => {
               setJoinCode(e.target.value.toUpperCase());
-              setError(null);
+              setJoinError(null);
             }}
             maxLength={6}
             placeholder="например, K7M2P"
@@ -116,6 +112,11 @@ export function HomeActions() {
             autoCapitalize="characters"
           />
         </label>
+        {joinError && (
+          <p className="text-sm text-[var(--accent)]" role="alert">
+            {joinError}
+          </p>
+        )}
         <button type="submit" className="btn btn-secondary">
           Войти в комнату
         </button>
