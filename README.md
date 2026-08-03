@@ -48,7 +48,12 @@ npm run generate:templates
 
 ## Деплой
 
-1. **Vercel** — репо `madlib`, env: `ADMIN_PASSWORD`, `ADMIN_SECRET`, `DATABASE_URL` (Neon)
-2. Один раз: `npm run db:migrate` (создаёт `templates` и `rooms`)
+См. пошаговый релиз на свой домен: [docs/RELEASE.md](docs/RELEASE.md).
+
+Кратко:
+
+1. **Vercel** — репо `madlib`; Production → домен + БД `chepuha_prod`, Preview → тест `neondb`
+2. Env: `ADMIN_PASSWORD`, `ADMIN_SECRET`, `DATABASE_URL`
+3. Миграции: `ENV_FILE=.env.prod.local npm run db:migrate` / `db:seed`
 
 Комнаты синхронизируются через Neon — отдельно PartyKit на проде не нужен.

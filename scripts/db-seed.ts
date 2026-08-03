@@ -10,7 +10,11 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { templates } from "../src/lib/db/schema";
 import type { Template } from "../src/lib/types";
 
-config({ path: ".env.local" });
+config({
+  path: process.env.ENV_FILE || ".env.local",
+  // ENV_FILE=.env.prod.local — явный прод-сид перекрывает shell/local
+  override: Boolean(process.env.ENV_FILE),
+});
 
 /** Правки из админки — не перезаписываем при сиде. */
 const PROTECTED_IDS = new Set(["story-horror-small-2"]);

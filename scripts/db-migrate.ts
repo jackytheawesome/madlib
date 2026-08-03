@@ -5,7 +5,10 @@
 import { config } from "dotenv";
 import { neon } from "@neondatabase/serverless";
 
-config({ path: ".env.local" });
+config({
+  path: process.env.ENV_FILE || ".env.local",
+  override: Boolean(process.env.ENV_FILE),
+});
 
 async function main() {
   const url =
