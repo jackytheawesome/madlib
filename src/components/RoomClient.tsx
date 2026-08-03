@@ -206,6 +206,12 @@ export function RoomClient({ code }: Props) {
     send({ type: "startGame", template: tpl });
   }
 
+  function playRandom() {
+    if (available.length === 0) return;
+    const tpl = available[Math.floor(Math.random() * available.length)]!;
+    startWithTemplate(tpl);
+  }
+
   function submitAnswers(e: React.FormEvent) {
     e.preventDefault();
     if (!player) return;
@@ -336,14 +342,24 @@ export function RoomClient({ code }: Props) {
             ))}
           </ul>
           {isHost && (
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => send({ type: "setPhase", phase: "picking" })}
-              disabled={playerCount < 1 || !connected}
-            >
-              Выбрать текст
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={playRandom}
+                disabled={playerCount < 1 || !connected || available.length === 0}
+              >
+                Играть
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => send({ type: "setPhase", phase: "picking" })}
+                disabled={playerCount < 1 || !connected}
+              >
+                Выбрать текст
+              </button>
+            </div>
           )}
           {!isHost && (
             <p className="text-sm text-[var(--ink-muted)]">Ждём, пока хост выберет текст…</p>
