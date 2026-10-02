@@ -1,0 +1,7 @@
+{
+  "name": "chepuha-arcade-demo",
+  "main": "party/arcade.ts",
+  "port": 1998,
+  "compatibilityDate": "2026-10-01",
+  "persist": true
+}

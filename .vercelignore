@@ -1,0 +1,11 @@
+.git
+node_modules
+.next
+.next-arcade-test
+.vercel
+.partykit
+.env*
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+docs/PROJECT_ANALYSIS.md

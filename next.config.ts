@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  distDir: process.env.ARCADE_TEST_BUILD_DIR || ".next",
   redirects() {
     return [
       {
