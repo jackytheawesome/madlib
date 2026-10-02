@@ -1,7 +1,2 @@
-import { NextResponse } from "next/server";
-import { clearAdminSession } from "@/lib/admin-auth";
-
-export async function POST() {
-  await clearAdminSession();
-  return NextResponse.json({ ok: true });
-}
+// Keep existing clients working while Chepuha moves under its own prefix.
+export { POST } from "@/app/api/chepuha/admin/logout/route";

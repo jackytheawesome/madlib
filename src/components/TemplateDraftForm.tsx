@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { GenreId, Template, TextKind, TextSize } from "@/lib/types";
 import { GENRES, KIND_LABELS, SIZE_LABELS } from "@/lib/types";
 import { hydrateEditorFromTemplate } from "@/lib/editor-hydrate";
+import { CHEPUHA_API_PATH } from "@/lib/chepuha-paths";
 
 type BlankMeta = {
   id: string;
@@ -429,7 +430,7 @@ export function TemplateDraftForm({ initialTemplate }: { initialTemplate?: Templ
     setSaveState("saving");
     setSaveError(null);
     try {
-      const res = await fetch("/api/admin/templates", {
+      const res = await fetch(`${CHEPUHA_API_PATH}/admin/templates`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(jsonPreview),

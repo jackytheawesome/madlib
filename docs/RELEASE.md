@@ -1,67 +1,42 @@
-# Релиз «Чепухи» на свой домен
+# Релиз Chepuha.fun
 
-Текущий прод-стенд на Vercel: https://madlib-snowy.vercel.app  
-Тест: Preview-деплои и локально (`neondb`). Прод-данные: база Neon `chepuha_prod`.
+Production: [chepuha.fun](https://chepuha.fun), проект Vercel `madlib`, репозиторий `jackytheawesome/madlib`. Домены `chepuha.fun` и `www.chepuha.fun` уже привязаны.
 
-## 1. Купить и привязать домен (нужно ваше действие)
+## Маршруты
 
-Vercel **не даёт агенту** купить домен без интерактива. Сделайте один раз у себя в терминале:
+- `/` — каталог игр.
+- `/chepuha` — «Чепуха».
+- `/chepuha/room/<code>` — комнаты.
+- `/chepuha/admin` — редактор шаблонов.
+- `/api/chepuha/...` — API игры.
 
-```bash
-cd ~/Projects/madlib
-npx vercel domains buy chepuha.dev
-# или другой: chepuha.app / chepuha.xyz — смотрите цены: npx vercel domains search chepuha
-```
+Прежние `/room/<code>` и `/admin/...` имеют постоянные перенаправления. Прежние API сохранены через реэкспорт обработчиков, поэтому открытые до релиза вкладки продолжают работать.
 
-Либо в браузере: https://vercel.com/dashboard/domains
-
-Затем привяжите к проекту:
-
-```bash
-npx vercel domains add chepuha.dev madlib
-npx vercel domains verify chepuha.dev
-```
-
-Если домен куплен не у Vercel — в панели регистратора пропишите DNS, которые покажет Vercel (Settings → Domains).
-
-После выпуска HTTPS сайт откроется на `https://chepuha.dev`.
-
-## 2. База (уже сделано)
+## Среды и данные
 
 | Среда | Neon database | Назначение |
-|-------|---------------|------------|
-| Production (Vercel) | `chepuha_prod` | игроки / релиз |
-| Preview + Development + local | `neondb` | тест |
+| --- | --- | --- |
+| Production | `chepuha_prod` | Игроки / релиз |
+| Preview / Development / local | `neondb` | Тест |
 
-Пересид прода:
+Разделение описывает настроенную ранее схему окружений. При настройке нового окружения её нужно проверить в Vercel. Перенос игры под `/chepuha` не требует миграции или seed БД.
 
-```bash
-ENV_FILE=.env.prod.local npx tsx scripts/db-seed.ts
-```
+Env: `DATABASE_URL` (либо `POSTGRES_URL` / `POSTGRES_PRISMA_URL`), `ADMIN_PASSWORD`, `ADMIN_SECRET`. Production использует собственные admin-секреты. Файлы `.env*.local` не включаются в Git.
 
-(файл `.env.prod.local` локальный, в git не попадает)
+## Выпуск
 
-## 3. Env (уже разведено)
+Production публикуется из `main` через Git-интеграцию Vercel. Эксперименты в других ветках выпускаются как Preview.
 
-- **Production:** `DATABASE_*` → `chepuha_prod`, отдельный `ADMIN_PASSWORD` / `ADMIN_SECRET`
-- **Preview / Development:** тестовая `neondb` + прежние admin-секреты
+1. `npm run lint` и `npm run build`.
+2. Запустить production build локально и выполнить `npm run check:routing`.
+3. Проверить каталог на desktop/mobile и переход в «Чепуху».
+4. Отправить проверенный commit в `main`.
+5. Дождаться Production `READY`; проверить соответствие commit SHA, домены и смоук опубликованного сайта.
 
-После смены env нужен redeploy Production:
+Альтернативный выпуск через установленный Vercel CLI: `vercel --prod`. CLI использует отдельную авторизацию.
 
-```bash
-npx vercel --prod
-```
+## Смоук
 
-Прод-пароль админки задаётся в Vercel → Environment Variables → `ADMIN_PASSWORD` (Production). Тестовый пароль на Preview остаётся прежним (`chepuha` / из `.env.local`).
+Автоматический `npm run check:routing -- https://chepuha.fun` проверяет страницы, редиректы и отказы API без создания комнат или изменения контента.
 
-## 4. Смоук после деплоя
-
-1. Главная открывается  
-2. Создать комнату, скопировать ссылку, зайти вторым ником  
-3. Выбрать текст → заполнить (🎲) → результат  
-4. `/admin` с **прод**-паролем  
-
-## 5. Правило ветвления
-
-- В **Production / домен** попадает только `main`  
-- Эксперименты — ветки → Preview URL (`*.vercel.app`)
+При полном ручном смоуке на тестовой среде: создать комнату → открыть приглашение вторым игроком → выбрать текст → заполнить → прочитать результат → следующий раунд. Проверить форму ника, случайное заполнение и ссылку «Все игры». Админка открывается по новому адресу, прежние закладки перенаправляются.

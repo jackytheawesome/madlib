@@ -15,8 +15,8 @@ const body = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Чепуха",
-  description: "Веб-игра: заполняйте пропуски вслепую и читайте получившуюся чепуху",
+  title: "Chepuha.fun — игры для компании",
+  description: "Игры для друзей прямо в браузере. Выбирайте игру, создавайте комнату и зовите свою компанию — без скачивания и регистрации.",
 };
 
 export default function RootLayout({

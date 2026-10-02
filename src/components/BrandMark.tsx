@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CHEPUHA_PATH } from "@/lib/chepuha-paths";
 
 type Props = {
   href?: string;
@@ -6,7 +7,7 @@ type Props = {
 };
 
 /** Текстовая марка «Чепуха» */
-export function BrandMark({ href = "/", size = "lg" }: Props) {
+export function BrandMark({ href = CHEPUHA_PATH, size = "lg" }: Props) {
   const mark = (
     <span
       className={

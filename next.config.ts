@@ -1,7 +1,20 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  redirects() {
+    return [
+      {
+        source: "/room/:code",
+        destination: "/chepuha/room/:code",
+        permanent: true,
+      },
+      {
+        source: "/admin/:path*",
+        destination: "/chepuha/admin/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

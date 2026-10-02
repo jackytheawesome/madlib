@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createRoomCode } from "@/lib/game";
+import { chepuhaRoomPath } from "@/lib/chepuha-paths";
 import { RANDOM_NICKNAMES, randomNickname } from "@/lib/nicknames";
 
 export function HomeActions() {
@@ -41,7 +42,7 @@ export function HomeActions() {
     }
     const code = createRoomCode();
     savePlayer(nick, true, code);
-    router.push(`/room/${code}`);
+    router.push(chepuhaRoomPath(code));
   }
 
   function onJoin(e: React.FormEvent) {
@@ -52,7 +53,7 @@ export function HomeActions() {
       return;
     }
     setJoinError(null);
-    router.push(`/room/${code}`);
+    router.push(chepuhaRoomPath(code));
   }
 
   return (

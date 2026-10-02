@@ -3,17 +3,18 @@ import Link from "next/link";
 import { BrandMark } from "@/components/BrandMark";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { TemplateDraftForm } from "@/components/TemplateDraftForm";
+import { CHEPUHA_ADMIN_PATH } from "@/lib/chepuha-paths";
 
 export default async function AdminNewPage() {
   if (!(await isAdminAuthenticated())) {
-    redirect("/admin/login");
+    redirect(`${CHEPUHA_ADMIN_PATH}/login`);
   }
 
   return (
     <div className="relative flex flex-1 flex-col">
       <header className="flex items-center justify-between border-b border-[var(--line)] px-6 py-4">
-        <BrandMark size="sm" href="/admin" />
-        <Link href="/admin" className="btn btn-ghost">
+        <BrandMark size="sm" href={CHEPUHA_ADMIN_PATH} />
+        <Link href={CHEPUHA_ADMIN_PATH} className="btn btn-ghost">
           К списку
         </Link>
       </header>

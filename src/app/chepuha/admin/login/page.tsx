@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { BrandMark } from "@/components/BrandMark";
+import { CHEPUHA_ADMIN_PATH, CHEPUHA_API_PATH } from "@/lib/chepuha-paths";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -14,7 +15,7 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const res = await fetch("/api/admin/login", {
+    const res = await fetch(`${CHEPUHA_API_PATH}/admin/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password }),
@@ -24,7 +25,7 @@ export default function AdminLoginPage() {
       setError("Неверный пароль");
       return;
     }
-    router.push("/admin");
+    router.push(CHEPUHA_ADMIN_PATH);
     router.refresh();
   }
 
@@ -32,7 +33,7 @@ export default function AdminLoginPage() {
     <div className="relative flex flex-1 flex-col items-center justify-center px-6 py-16">
       <div className="pointer-events-none absolute inset-0 bg-atmosphere opacity-50" aria-hidden />
       <div className="relative z-10 w-full max-w-sm space-y-6">
-        <BrandMark size="sm" href="/" />
+        <BrandMark size="sm" />
         <form onSubmit={onSubmit} className="panel space-y-4 p-6">
           <h1 className="font-[family-name:var(--font-display)] text-2xl text-[var(--ink)]">
             Админка

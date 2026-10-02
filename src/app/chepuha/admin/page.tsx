@@ -5,10 +5,11 @@ import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { genreLabel, loadAllTemplates } from "@/lib/content";
 import { KIND_LABELS, SIZE_LABELS } from "@/lib/types";
 import { AdminLogoutButton } from "@/components/AdminLogoutButton";
+import { CHEPUHA_ADMIN_PATH } from "@/lib/chepuha-paths";
 
 export default async function AdminPage() {
   if (!(await isAdminAuthenticated())) {
-    redirect("/admin/login");
+    redirect(`${CHEPUHA_ADMIN_PATH}/login`);
   }
 
   const templates = await loadAllTemplates();
@@ -16,7 +17,7 @@ export default async function AdminPage() {
   return (
     <div className="relative flex flex-1 flex-col">
       <header className="flex items-center justify-between border-b border-[var(--line)] px-6 py-4">
-        <BrandMark size="sm" href="/" />
+        <BrandMark size="sm" />
         <AdminLogoutButton />
       </header>
       <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-6 py-8">
@@ -29,7 +30,7 @@ export default async function AdminPage() {
               {templates.length} шт. Источник: Neon (если пусто — файлы в репо).
             </p>
           </div>
-          <Link href="/admin/new" className="btn btn-primary">
+          <Link href={`${CHEPUHA_ADMIN_PATH}/new`} className="btn btn-primary">
             Новый текст
           </Link>
         </div>
@@ -47,7 +48,7 @@ export default async function AdminPage() {
                 <code className="text-xs text-[var(--ink-muted)]">{t.id}</code>
               </div>
               <Link
-                href={`/admin/edit/${encodeURIComponent(t.id)}`}
+                href={`${CHEPUHA_ADMIN_PATH}/edit/${encodeURIComponent(t.id)}`}
                 className="btn btn-secondary shrink-0"
               >
                 Править

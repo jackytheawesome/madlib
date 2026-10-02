@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BrandMark } from "@/components/BrandMark";
 import { RoomClient } from "@/components/RoomClient";
 
@@ -11,8 +12,11 @@ export default async function RoomPage({ params }: Props) {
   return (
     <div className="relative flex flex-1 flex-col">
       <div className="pointer-events-none absolute inset-0 bg-atmosphere opacity-60" aria-hidden />
-      <header className="relative z-10 border-b border-[var(--line)] px-6 py-4">
+      <header className="relative z-10 flex items-center justify-between gap-4 border-b border-[var(--line)] px-6 py-4">
         <BrandMark size="sm" />
+        <Link href="/" className="btn btn-ghost text-sm">
+          <span aria-hidden>←</span> Все игры
+        </Link>
       </header>
       <main className="relative z-10 flex-1 px-6 py-8">
         <RoomClient code={code.toUpperCase()} />

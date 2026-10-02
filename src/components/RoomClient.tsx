@@ -7,6 +7,11 @@ import { fillSegments } from "@/lib/game";
 import { genreLabel } from "@/lib/content-shared";
 import { RANDOM_NICKNAMES, randomNickname } from "@/lib/nicknames";
 import { randomWordForHint } from "@/lib/random-words";
+import {
+  CHEPUHA_API_PATH,
+  chepuhaRoomApiPath,
+  chepuhaRoomPath,
+} from "@/lib/chepuha-paths";
 import type { ClientMessage, RoomState } from "@/lib/room";
 
 type LocalPlayer = {
@@ -48,32 +53,38 @@ export function RoomClient({ code }: Props) {
   const [linkCopied, setLinkCopied] = useState(false);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem(PLAYER_KEY);
-    if (!raw) {
-      setGateReady(true);
-      return;
-    }
-    try {
-      const parsed = JSON.parse(raw) as LocalPlayer & { roomCode?: string };
-      const nick = parsed.nickname?.trim() ?? "";
-      const sameRoom = parsed.roomCode?.toUpperCase() === code.toUpperCase();
-      if (sameRoom && nick) {
-        setPlayer({
-          id: parsed.id,
-          nickname: nick,
-          isHost: Boolean(parsed.isHost),
-        });
-      } else if (nick) {
-        setNickDraft(nick);
+    let cancelled = false;
+    // Hydrate browser-only storage after mount, keeping the server loading gate.
+    queueMicrotask(() => {
+      if (cancelled) return;
+      try {
+        const raw = sessionStorage.getItem(PLAYER_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw) as LocalPlayer & { roomCode?: string };
+          const nick = parsed.nickname?.trim() ?? "";
+          const sameRoom = parsed.roomCode?.toUpperCase() === code.toUpperCase();
+          if (sameRoom && nick) {
+            setPlayer({
+              id: parsed.id,
+              nickname: nick,
+              isHost: Boolean(parsed.isHost),
+            });
+          } else if (nick) {
+            setNickDraft(nick);
+          }
+        }
+      } catch {
+        /* ignore unavailable or invalid session storage */
       }
-    } catch {
-      /* ignore */
-    }
-    setGateReady(true);
+      setGateReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [code]);
 
   useEffect(() => {
-    fetch("/api/templates")
+    fetch(`${CHEPUHA_API_PATH}/templates`)
       .then((r) => r.json())
       .then((data: { templates: Template[] }) => setTemplates(data.templates))
       .catch(() => setTemplates([]));
@@ -81,7 +92,7 @@ export function RoomClient({ code }: Props) {
 
   const postMessage = useCallback(
     async (msg: ClientMessage, playerId: string) => {
-      const res = await fetch(`/api/rooms/${encodeURIComponent(code)}`, {
+      const res = await fetch(chepuhaRoomApiPath(code), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: msg, playerId }),
@@ -119,7 +130,7 @@ export function RoomClient({ code }: Props) {
           );
         } else {
           const res = await fetch(
-            `/api/rooms/${encodeURIComponent(code)}?playerId=${encodeURIComponent(player!.id)}`,
+            `${chepuhaRoomApiPath(code)}?playerId=${encodeURIComponent(player!.id)}`,
           );
           const data = (await res.json()) as { state?: RoomState; error?: string };
           if (cancelled) return;
@@ -170,7 +181,7 @@ export function RoomClient({ code }: Props) {
   }
 
   async function copyInviteLink() {
-    const url = `${window.location.origin}/room/${code}`;
+    const url = `${window.location.origin}${chepuhaRoomPath(code)}`;
     try {
       await navigator.clipboard.writeText(url);
       setLinkCopied(true);
