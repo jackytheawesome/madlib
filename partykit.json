@@ -1,6 +1,5 @@
 {
   "name": "chepuha-rooms",
   "main": "party/server.ts",
-  "parties": { "arcade": "party/arcade.ts" },
   "compatibilityDate": "2024-11-01"
 }

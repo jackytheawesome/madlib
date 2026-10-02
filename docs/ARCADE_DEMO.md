@@ -23,11 +23,13 @@
 
 ## Инфраструктура и выпуск
 
-Next.js на Vercel отдаёт интерфейс и API входа. PartyKit-проект `chepuha-rooms` содержит отдельный обработчик `arcade` и комнату `demo`: `/parties/arcade/demo`. Он рассчитывает игру и рассылает состояние 20 раз в секунду. Настройки комнаты и состояние сохраняются в отдельном storage этой комнаты. Прежний обработчик `main` сохранён; production-комнаты «Чепухи» используют Neon API. Новый домен PartyKit создать не удалось из-за общего лимита сервиса, поэтому аркада опубликована на существующем домене.
+Next.js на Vercel отдаёт интерфейс и API входа. Отдельный Worker Cloudflare `chepuha-arcade-demo` направляет `/parties/arcade/demo` в SQLite Durable Object `ArcadeDurable`. Адаптер использует тот же проверенный сервер и рассчитывает общую игру; снимки состояния отправляются 20 раз в секунду. Настройки комнаты и состояние сохраняются в storage. Production-комнаты «Чепухи» используют прежний Neon API.
 
-Vercel и PartyKit используют общий серверный `ARCADE_SECRET`; Vercel также требует `NEXT_PUBLIC_ARCADE_HOST` и существующий `ADMIN_PASSWORD`. Секрет не передаётся в клиент. Билеты входа подписаны, действуют 12 часов и отзываются при закрытии/смене пароля.
+Хостинг PartyKit отказал в публикации с ошибкой Cloudflare «10000 Workers custom domains on zone partykit.dev», в том числе для существующего проекта и последнего CLI 0.0.115. Размещение в собственном аккаунте Cloudflare обходит этот общий домен; PartyKit остаётся вариантом для локального запуска.
 
-`node scripts/release-arcade.mjs` публикует отдельный production deployment Vercel через `--skip-domain`, без переключения `chepuha.fun`. Отдельный `vercel.arcade.json` выбирает Webpack для этого выпуска: установленный Turbopack ошибается при обработке Google Fonts. Скрипт конфигурирует секрет через stdin, ждёт READY и проходит реальный сетевой сценарий четырьмя тестовыми подключениями. После проверки комната закрыта.
+Vercel и Cloudflare используют общий серверный `ARCADE_SECRET`; Vercel также требует `NEXT_PUBLIC_ARCADE_HOST` и существующий `ADMIN_PASSWORD`. Секрет не передаётся в клиент. Билеты входа подписаны, действуют 12 часов и отзываются при закрытии/смене пароля.
+
+`node scripts/release-arcade.mjs` публикует Worker в авторизованном аккаунте Cloudflare и отдельный production deployment Vercel через `--skip-domain`, без переключения `chepuha.fun`. Отдельный `vercel.arcade.json` выбирает Webpack для этого выпуска: установленный Turbopack ошибается при обработке Google Fonts. Скрипт передаёт секрет Wrangler через временный файл с правами 0600 (сразу удаляется), а Vercel через stdin, ждёт READY и проходит реальный сетевой сценарий четырьмя тестовыми подключениями. После проверки комната закрыта; публичные адреса сохраняются в `docs/ARCADE_RELEASE.json`. Повторный выпуск проверяет, что текущая комната закрыта и ведущая отключена. Для старого хостинга существует явный `--partykit`, сейчас его публикация блокируется сервисом.
 
 ## Локальная разработка и проверка
 
@@ -39,6 +41,7 @@ npm run dev:next -- --hostname 127.0.0.1 --port 3010
 ./node_modules/.bin/tsx scripts/check-arcade-room.ts
 ./node_modules/.bin/tsx scripts/check-arcade-server.ts
 node scripts/check-arcade-e2e.mjs
+node scripts/check-arcade-e2e.mjs --cloudflare
 npm run lint
 ./node_modules/.bin/tsc --noEmit
 ARCADE_TEST_BUILD_DIR=.next-arcade-test npm run build -- --webpack

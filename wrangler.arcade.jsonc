@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "chepuha-arcade-demo",
+  "main": "workers/arcade.mjs",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "send_metrics": false,
+  "durable_objects": {
+    "bindings": [
+      { "name": "ARCADE_ROOM", "class_name": "ArcadeDurable" }
+    ]
+  },
+  "migrations": [
+    { "tag": "arcade-v1", "new_sqlite_classes": ["ArcadeDurable"] }
+  ],
+  "secrets": { "required": ["ARCADE_SECRET"] },
+  "observability": { "enabled": false }
+}

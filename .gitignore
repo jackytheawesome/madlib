@@ -43,3 +43,5 @@ next-env.d.ts
 
 # PartyKit local runtime state
 .partykit/
+.wrangler/
+.dev.vars*

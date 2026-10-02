@@ -1,5 +1,5 @@
 {
-  "name": "chepuha-rooms",
+  "name": "chepuha-arcade-demo",
   "main": "party/server.ts",
   "parties": { "arcade": "party/arcade.ts" },
   "port": 1998,

@@ -1,10 +1,14 @@
 import { randomBytes } from "node:crypto";
 import { spawn } from "node:child_process";
+import { mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { checkArcadeLive, checkLegacyParty } from "./check-arcade-live.mjs";
 
 // Credentials remain in this process and are piped to the provider CLIs, never printed.
 const secret = randomBytes(32).toString("hex");
 process.env.ARCADE_SECRET = secret;
+const cloudflare = !process.argv.includes("--partykit");
 
 function safe(value) {
   return value.replaceAll(secret, "<masked>").replace(/(?:https?|wss?):\/\/[^\s"<>]+/g, (candidate) => {
@@ -44,20 +48,34 @@ async function waitForBackend(backend) {
 }
 
 async function main() {
-  const expectedBackend = "https://chepuha-rooms.jackytheawesome.partykit.dev/parties/arcade/demo";
-  const existing = await fetch(expectedBackend, { signal: AbortSignal.timeout(10_000) }).catch(() => null);
+  const previousRelease = await readFile("docs/ARCADE_RELEASE.json", "utf8").then(JSON.parse).catch(() => null);
+  const expectedBackend = process.env.ARCADE_RELEASE_BACKEND || (cloudflare ? previousRelease?.backend : "https://chepuha-arcade-demo.jackytheawesome.partykit.dev/parties/arcade/demo");
+  const existing = expectedBackend ? await fetch(expectedBackend, { signal: AbortSignal.timeout(10_000) }).catch(() => null) : null;
   if (existing?.ok) {
     const status = await existing.json();
     if (status.open || status.hostOnline) throw new Error("Перед выпуском нужно закрыть текущую репетицию");
   }
-  console.log("Deploying the separate arcade party on the existing PartyKit server…");
-  const server = await cli("./node_modules/.bin/partykit", ["deploy", "-c", "partykit.arcade.json"]);
-  const backendOrigin = `${server.output}\n${server.errors}`.match(/Deployed [^\n]* to (https:\/\/[a-z0-9.-]+\.partykit\.dev)/i)?.[1];
-  if (!backendOrigin) throw new Error("PartyKit не вернул адрес опубликованного сервера");
-  console.log(`PartyKit deployed: ${backendOrigin}`);
-  await cli("./node_modules/.bin/partykit", ["env", "add", "ARCADE_SECRET", "-c", "partykit.arcade.json"], secret);
+  let backendOrigin;
+  if (cloudflare) {
+    console.log("Deploying the arcade room directly to Cloudflare…");
+    const directory = await mkdtemp(path.join(tmpdir(), "arcade-release-"));
+    try {
+      const secretsFile = path.join(directory, "secrets.json");
+      await writeFile(secretsFile, JSON.stringify({ ARCADE_SECRET: secret }), { mode: 0o600 });
+      const server = await cli("./node_modules/.bin/wrangler", ["deploy", "-c", "wrangler.arcade.jsonc", "--secrets-file", secretsFile]);
+      backendOrigin = `${server.output}\n${server.errors}`.match(/https:\/\/[a-z0-9.-]+\.workers\.dev/i)?.[0];
+    } finally { await rm(directory, { recursive: true, force: true }); }
+    if (!backendOrigin) throw new Error("Cloudflare не вернул адрес опубликованного сервера");
+  } else {
+    console.log("Deploying the separate arcade party on the existing PartyKit server…");
+    const server = await cli("./node_modules/.bin/partykit", ["deploy", "-c", "partykit.arcade.json"]);
+    backendOrigin = `${server.output}\n${server.errors}`.match(/Deployed [^\n]* to (https:\/\/[a-z0-9.-]+\.partykit\.dev)/i)?.[1];
+    if (!backendOrigin) throw new Error("PartyKit не вернул адрес опубликованного сервера");
+    await cli("./node_modules/.bin/partykit", ["env", "add", "ARCADE_SECRET", "-c", "partykit.arcade.json"], secret);
+  }
+  console.log(`Room server deployed: ${backendOrigin}`);
   await waitForBackend(`${backendOrigin}/parties/arcade/demo`);
-  await checkLegacyParty(`${backendOrigin}/parties/arcade/demo`);
+  if (!cloudflare) await checkLegacyParty(`${backendOrigin}/parties/arcade/demo`);
   await cli("vercel", ["env", "add", "ARCADE_SECRET", "production", "--sensitive", "--yes", "--force"], secret);
   await cli("vercel", ["env", "add", "NEXT_PUBLIC_ARCADE_HOST", "production", "--no-sensitive", "--yes", "--force"], new URL(backendOrigin).host);
   console.log("Room credentials configured; deploying the Vercel demo without changing the existing domain…");
@@ -81,7 +99,9 @@ async function main() {
   if (page.status !== 200) throw new Error(`Демо недоступно для игроков: HTTP ${page.status}`);
   console.log(`Vercel READY: ${frontend}/arcade`);
   await checkArcadeLive({ backend: `${backendOrigin}/parties/arcade/demo`, frontend, secret });
-  console.log(JSON.stringify({ deploymentUrl: frontend, gameUrl: `${frontend}/arcade`, hostUrl: `${frontend}/arcade?host=1`, status: "READY", fourPlayerCheck: "passed", room: "closed" }));
+  const release = { deploymentUrl: frontend, gameUrl: `${frontend}/arcade`, hostUrl: `${frontend}/arcade?host=1`, backend: `${backendOrigin}/parties/arcade/demo`, status: "READY", fourPlayerCheck: "passed", room: "closed" };
+  await writeFile("docs/ARCADE_RELEASE.json", `${JSON.stringify(release, null, 2)}\n`);
+  console.log(JSON.stringify(release));
 }
 
 main().catch((error) => { console.error(safe(error instanceof Error ? error.message : "Выпуск демо не завершён")); process.exitCode = 1; });

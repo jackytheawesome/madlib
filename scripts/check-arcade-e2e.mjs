@@ -9,6 +9,7 @@ const secret = randomBytes(32).toString("hex");
 const adminPassword = randomBytes(24).toString("hex");
 const adminSecret = randomBytes(32).toString("hex");
 const children = [];
+const cloudflare = process.argv.includes("--cloudflare");
 const directory = await mkdtemp(path.join(tmpdir(), "arcade-e2e-"));
 let logs = "";
 
@@ -35,10 +36,12 @@ async function ready(url, timeout = 60_000) {
 }
 
 try {
-  launch(["node_modules/partykit/dist/bin.mjs", "dev", "-c", "partykit.arcade.json", "--port", "1998", "--persist", directory, "--var", `ARCADE_SECRET=${secret}`, "--no-hotkeys", "--disable-request-cf-fetch"]);
+  launch(cloudflare
+    ? ["node_modules/wrangler/bin/wrangler.js", "dev", "-c", "wrangler.arcade.jsonc", "--ip", "127.0.0.1", "--port", "1998", "--persist-to", directory, "--var", `ARCADE_SECRET:${secret}`]
+    : ["node_modules/partykit/dist/bin.mjs", "dev", "-c", "partykit.arcade.json", "--port", "1998", "--persist", directory, "--var", `ARCADE_SECRET=${secret}`, "--no-hotkeys", "--disable-request-cf-fetch"]);
   await ready("http://127.0.0.1:1998/parties/arcade/demo");
-  console.log("PartyKit local server ready.");
-  await checkLegacyParty("http://127.0.0.1:1998/parties/arcade/demo");
+  console.log(`${cloudflare ? "Cloudflare" : "PartyKit"} local server ready.`);
+  if (!cloudflare) await checkLegacyParty("http://127.0.0.1:1998/parties/arcade/demo");
   launch(["node_modules/next/dist/bin/next", "dev", "--hostname", "127.0.0.1", "--port", "3020"], {
     ARCADE_SECRET: secret, ADMIN_PASSWORD: adminPassword, ADMIN_SECRET: adminSecret,
     NEXT_PUBLIC_ARCADE_HOST: "127.0.0.1:1998", ARCADE_TEST_BUILD_DIR: ".next-arcade-test",
