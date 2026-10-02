@@ -11,7 +11,7 @@ function roomUrl(): string {
   if (!host || !/^[a-z0-9.-]+(?::\d+)?$/i.test(host)) throw new Error("Комната ещё не настроена");
   const local = /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host);
   if (local && process.env.NODE_ENV === "production") throw new Error("Комната ещё не настроена");
-  return `${local ? "http" : "https"}://${host}/parties/main/demo`;
+  return `${local ? "http" : "https"}://${host}/parties/arcade/demo`;
 }
 
 export function sameOrigin(request: Request): boolean {

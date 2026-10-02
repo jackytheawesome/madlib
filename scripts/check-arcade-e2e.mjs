@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { checkArcadeLive } from "./check-arcade-live.mjs";
+import { checkArcadeLive, checkLegacyParty } from "./check-arcade-live.mjs";
 
 const secret = randomBytes(32).toString("hex");
 const adminPassword = randomBytes(24).toString("hex");
@@ -36,15 +36,16 @@ async function ready(url, timeout = 60_000) {
 
 try {
   launch(["node_modules/partykit/dist/bin.mjs", "dev", "-c", "partykit.arcade.json", "--port", "1998", "--persist", directory, "--var", `ARCADE_SECRET=${secret}`, "--no-hotkeys", "--disable-request-cf-fetch"]);
-  await ready("http://127.0.0.1:1998/parties/main/demo");
+  await ready("http://127.0.0.1:1998/parties/arcade/demo");
   console.log("PartyKit local server ready.");
+  await checkLegacyParty("http://127.0.0.1:1998/parties/arcade/demo");
   launch(["node_modules/next/dist/bin/next", "dev", "--hostname", "127.0.0.1", "--port", "3020"], {
     ARCADE_SECRET: secret, ADMIN_PASSWORD: adminPassword, ADMIN_SECRET: adminSecret,
     NEXT_PUBLIC_ARCADE_HOST: "127.0.0.1:1998", ARCADE_TEST_BUILD_DIR: ".next-arcade-test",
   });
   await ready("http://127.0.0.1:3020/api/arcade/status");
   console.log("Next.js local multiplayer server ready.");
-  await checkArcadeLive({ backend: "http://127.0.0.1:1998/parties/main/demo", frontend: "http://127.0.0.1:3020", secret, adminPassword });
+  await checkArcadeLive({ backend: "http://127.0.0.1:1998/parties/arcade/demo", frontend: "http://127.0.0.1:3020", secret, adminPassword });
 } catch (error) {
   console.error(error instanceof Error ? error.message : "Live multiplayer check failed");
   console.error(logs);

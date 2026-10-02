@@ -3,6 +3,27 @@ import { randomBytes } from "node:crypto";
 
 const empty = { left: false, right: false, jump: false, interact: false, shoot: false };
 
+/** The existing default party remains available alongside the isolated arcade party. */
+export async function checkLegacyParty(backend) {
+  const origin = new URL(backend).origin.replace(/^http/, "ws");
+  const socket = new WebSocket(`${origin}/parties/main/arcade-smoke-${randomBytes(8).toString("hex")}`);
+  try {
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("Прежний маршрут PartyKit не подтвердил готовность")), 10_000);
+      socket.addEventListener("error", () => { clearTimeout(timer); reject(new Error("Прежний маршрут PartyKit недоступен")); }, { once: true });
+      socket.addEventListener("message", (event) => {
+        try {
+          const message = JSON.parse(String(event.data));
+          assert.equal(message.type, "state");
+          assert.ok(Array.isArray(message.state.players));
+          clearTimeout(timer); resolve();
+        } catch { clearTimeout(timer); reject(new Error("Прежний маршрут PartyKit вернул неожиданное состояние")); }
+      }, { once: true });
+    });
+    console.log("✓ прежний маршрут PartyKit main работает отдельно от аркады");
+  } finally { socket.close(); }
+}
+
 class PlayerClient {
   state = null;
   room = null;

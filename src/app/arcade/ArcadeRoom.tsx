@@ -160,7 +160,7 @@ export default function ArcadeRoom({ hostMode = false }: { hostMode?: boolean })
     let validatingSession = false;
     let nextValidationAt = 0;
     const validationController = new AbortController();
-    const socket = new PartySocket({ host, party: "main", room: "demo", query: { token: session.token }, maxEnqueuedMessages: 0 });
+    const socket = new PartySocket({ host, party: "arcade", room: "demo", query: { token: session.token }, maxEnqueuedMessages: 0 });
     socketRef.current = socket;
     localIdRef.current = session.playerId;
     const clear = () => { heldKeys.current.clear(); inputRef.current = { ...EMPTY_INPUT }; };

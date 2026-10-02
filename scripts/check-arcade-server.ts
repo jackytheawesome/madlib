@@ -32,7 +32,7 @@ const room = {
 } as unknown as Party.Room;
 const server = new ArcadeServer(room);
 type ServerConnection = Parameters<ArcadeServer["onMessage"]>[1];
-const endpoint = "https://arcade.example/parties/main/demo";
+const endpoint = "https://arcade.example/parties/arcade/demo";
 function request(body: unknown, authenticated = true) {
   return new Request(endpoint, {
     method: "POST",
