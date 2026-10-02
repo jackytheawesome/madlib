@@ -16,7 +16,24 @@ function roomUrl(): string {
 
 export function sameOrigin(request: Request): boolean {
   const origin = request.headers.get("origin");
-  return !origin || origin === new URL(request.url).origin;
+  if (!origin) return true;
+  try {
+    const incoming = new URL(origin);
+    const target = new URL(request.url);
+    if ((incoming.protocol !== "http:" && incoming.protocol !== "https:")
+      || incoming.username || incoming.password || incoming.pathname !== "/" || incoming.search || incoming.hash) return false;
+    const host = request.headers.get("host");
+    let actualOrigin: string | null = null;
+    if (host !== null) {
+      if (!host || /[\s/@?#\\,]/.test(host)) return false;
+      actualOrigin = new URL(`${target.protocol}//${host}`).origin;
+    }
+    // Next.js can canonicalize a local Request URL to localhost even when the
+    // browser opened 127.0.0.1. Host retains that browser-facing authority.
+    return incoming.origin === target.origin || incoming.origin === actualOrigin;
+  } catch {
+    return false;
+  }
 }
 
 export async function requestArcadeRoom(body?: Record<string, unknown>, request?: Request): Promise<Response> {

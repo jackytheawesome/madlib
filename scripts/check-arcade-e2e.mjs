@@ -7,6 +7,7 @@ import { checkArcadeLive, checkLegacyParty } from "./check-arcade-live.mjs";
 
 const secret = randomBytes(32).toString("hex");
 const adminPassword = randomBytes(24).toString("hex");
+const hostPassword = randomBytes(24).toString("hex");
 const adminSecret = randomBytes(32).toString("hex");
 const children = [];
 const cloudflare = process.argv.includes("--cloudflare");
@@ -17,7 +18,7 @@ function launch(args, env = {}) {
   const child = spawn(process.execPath, args, { cwd: process.cwd(), env: { ...process.env, ...env }, detached: true, stdio: ["ignore", "pipe", "pipe"] });
   const capture = (chunk) => {
     let safe = String(chunk);
-    for (const value of [secret, adminPassword, adminSecret]) safe = safe.replaceAll(value, "<masked>");
+    for (const value of [secret, adminPassword, adminSecret, hostPassword]) safe = safe.replaceAll(value, "<masked>");
     safe = safe.replace(/([?&]token=)[^\s"']+/g, "$1<masked>");
     logs = (logs + safe).slice(-8000);
   };
@@ -43,12 +44,12 @@ try {
   console.log(`${cloudflare ? "Cloudflare" : "PartyKit"} local server ready.`);
   if (!cloudflare) await checkLegacyParty("http://127.0.0.1:1998/parties/arcade/demo");
   launch(["node_modules/next/dist/bin/next", "dev", "--hostname", "127.0.0.1", "--port", "3020"], {
-    ARCADE_SECRET: secret, ADMIN_PASSWORD: adminPassword, ADMIN_SECRET: adminSecret,
+    ARCADE_SECRET: secret, ARCADE_HOST_PASSWORD: hostPassword, ADMIN_PASSWORD: adminPassword, ADMIN_SECRET: adminSecret,
     NEXT_PUBLIC_ARCADE_HOST: "127.0.0.1:1998", ARCADE_TEST_BUILD_DIR: ".next-arcade-test",
   });
   await ready("http://127.0.0.1:3020/api/arcade/status");
   console.log("Next.js local multiplayer server ready.");
-  await checkArcadeLive({ backend: "http://127.0.0.1:1998/parties/arcade/demo", frontend: "http://127.0.0.1:3020", secret, adminPassword });
+  await checkArcadeLive({ backend: "http://127.0.0.1:1998/parties/arcade/demo", frontend: "http://127.0.0.1:3020", secret, hostPassword });
 } catch (error) {
   console.error(error instanceof Error ? error.message : "Live multiplayer check failed");
   console.error(logs);

@@ -1,18 +1,12 @@
 import { cookies } from "next/headers";
-import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { verifyTicket } from "@/lib/arcade/auth";
 import { arcadeSecret, NO_STORE, requestArcadeRoom, sameOrigin } from "@/lib/arcade/backend";
+import { hostLoginConfigured, isHostAuthenticated } from "@/lib/arcade/host-auth";
 
 const MAX_AGE = 12 * 60 * 60;
 const COOKIE_OPTIONS = { httpOnly: true, sameSite: "lax" as const, secure: process.env.NODE_ENV === "production", path: "/api/arcade" };
 const cookieName = (host: boolean) => host ? "arcade_host" : "arcade_player";
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: NO_STORE });
-
-function hostConfigured(): boolean {
-  // Existing admin auth signs with ADMIN_SECRET, or the configured password.
-  // Requiring the password prevents the existing local-only default from authorizing a host.
-  return Boolean(process.env.ADMIN_PASSWORD);
-}
 
 async function sessionResponse(upstream: Response, host: boolean) {
   const body = await upstream.json();
@@ -29,7 +23,7 @@ export async function GET(request: Request) {
   if (!token) return json({ error: "Войдите в комнату" }, 401);
   try {
     const ticket = await verifyTicket(arcadeSecret(), token);
-    if (!ticket || (ticket.role === "host") !== host || (host && (!hostConfigured() || !await isAdminAuthenticated()))) {
+    if (!ticket || (ticket.role === "host") !== host || (host && (!hostLoginConfigured() || !await isHostAuthenticated()))) {
       jar.set(cookieName(host), "", { ...COOKIE_OPTIONS, maxAge: 0 });
       return json({ error: "Войдите в комнату заново" }, 401);
     }
@@ -59,8 +53,8 @@ export async function POST(request: Request) {
     return json({ error: "Укажите ник и цвет героя" }, 400);
   }
   if (host) {
-    if (!hostConfigured()) return json({ error: "Вход ведущей ещё не настроен" }, 503);
-    if (!await isAdminAuthenticated()) return json({ error: "Войдите как ведущая" }, 401);
+    if (!hostLoginConfigured()) return json({ error: "Вход ведущей ещё не настроен" }, 503);
+    if (!await isHostAuthenticated()) return json({ error: "Войдите как ведущая" }, 401);
   }
   try {
     const resumeToken = !host ? (await cookies()).get(cookieName(false))?.value : undefined;

@@ -115,7 +115,8 @@ async function jumpTo(client, x, feet) {
 }
 
 /** Four real WebSocket connections, including the host; no client-side simulation or teleporting. */
-export async function checkArcadeLive({ backend, frontend, secret, adminPassword }) {
+export async function checkArcadeLive({ backend, frontend, secret, adminPassword, hostPassword }) {
+  const loginPassword = hostPassword || adminPassword;
   const password = randomBytes(18).toString("hex");
   const rotatedPassword = randomBytes(18).toString("hex");
   const clients = [];
@@ -124,6 +125,7 @@ export async function checkArcadeLive({ backend, frontend, secret, adminPassword
   let succeeded = false;
   let checks = 0;
   const passed = (label) => { checks++; console.log(`✓ ${label}`); };
+  const browserHeaders = frontend ? { Origin: new URL(frontend).origin } : {};
   const internal = async (body) => fetch(backend, {
     method: "POST", headers: { Authorization: `Bearer ${secret}`, "Content-Type": "application/json", "x-arcade-client": "live-check" }, body: JSON.stringify(body),
     signal: AbortSignal.timeout(15_000),
@@ -131,7 +133,7 @@ export async function checkArcadeLive({ backend, frontend, secret, adminPassword
   const admit = async (index, candidate = password) => {
     const body = { nickname: ["Ведущая", "Мята", "Апельсин", "Розовый"][index] || "Пятый", color: ["#a899ff", "#61d6bd", "#ffb66b", "#ef8fae"][index] || "#a899ff" };
     const response = frontend ? await fetch(`${frontend}/api/arcade/session`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...body, role: "player", password: candidate }),
+      method: "POST", headers: { "Content-Type": "application/json", ...browserHeaders }, body: JSON.stringify({ ...body, role: "player", password: candidate }),
       signal: AbortSignal.timeout(15_000),
     }) : await internal({ ...body, action: "join", password: candidate });
     return { response, body: await response.json(), cookie: response.headers.get("set-cookie")?.split(";")[0] };
@@ -142,15 +144,23 @@ export async function checkArcadeLive({ backend, frontend, secret, adminPassword
   assert.equal(before.open, false, "Live check must not interrupt an open event");
   try {
     let hostAdmission;
-    if (frontend && adminPassword) {
-      const login = await fetch(`${frontend}/api/chepuha/admin/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: adminPassword }) });
+    if (frontend && loginPassword) {
+      const login = await fetch(`${frontend}/api/arcade/host-login`, { method: "POST", headers: { "Content-Type": "application/json", ...browserHeaders }, body: JSON.stringify({ password: loginPassword }) });
       assert.equal(login.status, 200);
       const cookie = login.headers.get("set-cookie")?.split(";")[0];
-      const session = await fetch(`${frontend}/api/arcade/session`, { method: "POST", headers: { "Content-Type": "application/json", Cookie: cookie }, body: JSON.stringify({ role: "host", nickname: "Ведущая", color: "#a899ff" }) });
+      const session = await fetch(`${frontend}/api/arcade/session`, { method: "POST", headers: { "Content-Type": "application/json", ...browserHeaders, Cookie: cookie }, body: JSON.stringify({ role: "host", nickname: "Ведущая", color: "#a899ff" }) });
       assert.equal(session.status, 200);
       hostAdmission = await session.json();
       passed("вход ведущей проходит через Next.js и защищённую сессию");
     } else {
+      if (frontend) {
+        const invalidLogin = await fetch(`${frontend}/api/arcade/host-login`, {
+          method: "POST", headers: { "Content-Type": "application/json", ...browserHeaders },
+          body: JSON.stringify({ password: randomBytes(32).toString("hex") }), signal: AbortSignal.timeout(15_000),
+        });
+        assert.equal(invalidLogin.status, 401);
+        passed("маршрут входа ведущей доступен и отвергает неверный пароль");
+      }
       hostAdmission = await (await internal({ action: "host", nickname: "Ведущая", color: "#a899ff" })).json();
     }
     host = new PlayerClient(backend, hostAdmission); clients.push(host);
@@ -258,7 +268,7 @@ export async function checkArcadeLive({ backend, frontend, secret, adminPassword
     const closed = await (await fetch(backend)).json(); assert.equal(closed.open, false);
     passed("закрытие мероприятия блокирует дальнейший вход");
     if (frontend) {
-      const unsignedHost = await fetch(`${frontend}/api/arcade/session`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: "host", nickname: "Чужой", color: "#a899ff" }) });
+      const unsignedHost = await fetch(`${frontend}/api/arcade/session`, { method: "POST", headers: { "Content-Type": "application/json", ...browserHeaders }, body: JSON.stringify({ role: "host", nickname: "Чужой", color: "#a899ff" }) });
       assert.equal(unsignedHost.status, 401);
       const crossOrigin = await fetch(`${frontend}/api/arcade/session`, { method: "POST", headers: { "Content-Type": "application/json", Origin: "https://untrusted.example" }, body: "{}" });
       assert.equal(crossOrigin.status, 403);

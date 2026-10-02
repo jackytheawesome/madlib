@@ -1,0 +1,12 @@
+{
+  "deploymentUrl": "https://madlib-l8zbrf9l7-jackytheawesomes-projects.vercel.app",
+  "vercelOrigin": "https://chepuha-arcade-demo.vercel.app",
+  "gameUrl": "https://chepuha-arcade-demo.madlib.workers.dev/arcade",
+  "hostUrl": "https://chepuha-arcade-demo.madlib.workers.dev/arcade?host=1",
+  "backend": "https://chepuha-arcade-demo.madlib.workers.dev/parties/arcade/demo",
+  "status": "READY",
+  "fourPlayerCheck": "passed",
+  "hostLoginCheck": "passed",
+  "checkedAt": "2026-10-02T16:13:50.138Z",
+  "room": "closed"
+}

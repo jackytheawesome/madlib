@@ -98,8 +98,8 @@ export default function ArcadeRoom({ hostMode = false }: { hostMode?: boolean })
   const [color, setColor] = useState(COLORS[0]);
   const [password, setPassword] = useState("");
   const [guestPassword, setGuestPassword] = useState("");
-  const [adminPassword, setAdminPassword] = useState("");
-  const [needsAdmin, setNeedsAdmin] = useState(false);
+  const [hostPassword, setHostPassword] = useState("");
+  const [needsHostPassword, setNeedsHostPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
@@ -308,14 +308,14 @@ export default function ArcadeRoom({ hostMode = false }: { hostMode?: boolean })
     if (booting || restoreUnavailable || busy) return;
     setBusy(true); setError("");
     try {
-      if (needsAdmin) {
-        const login = await fetch("/api/chepuha/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: adminPassword }) });
+      if (needsHostPassword) {
+        const login = await fetch("/api/arcade/host-login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: hostPassword }) });
         if (!login.ok) throw new Error("Пароль ведущей не подошёл.");
-        setAdminPassword(""); setNeedsAdmin(false);
+        setHostPassword(""); setNeedsHostPassword(false);
       }
       const response = await fetch("/api/arcade/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: hostMode ? "host" : "player", nickname: nickname.trim(), color, ...(hostMode ? {} : { password }) }) });
       const data = await response.json().catch(() => ({}));
-      if (hostMode && response.status === 401) { setNeedsAdmin(true); return; }
+      if (hostMode && response.status === 401) { setNeedsHostPassword(true); return; }
       if (!response.ok || !validSession(data)) throw new Error(data.error || data.message || "Не удалось войти в комнату.");
       setSession(data); setNetwork("connecting"); setPassword("");
     } catch (failure) { setError(failure instanceof Error ? failure.message : "Нет связи. Попробуй ещё раз."); }
@@ -381,11 +381,11 @@ export default function ArcadeRoom({ hostMode = false }: { hostMode?: boolean })
 
               {!session && <div className={styles.overlay}><form className={`${styles.startCard} ${styles.roomCard}`} onSubmit={join}>
                 <span className={styles.cardEyebrow}>{hostMode ? "Комната ведущей" : "Документы → вопрос → босс"}</span>
-                <h2>{booting ? "Проверяем вход…" : restoreUnavailable ? "Нет связи с комнатой" : needsAdmin ? "Вход для ведущей" : hostMode ? "Соберём команду?" : "Приключение на четверых"}</h2>
-                <p>{hostMode ? "Войди, задай пароль для участников и открой комнату." : publicStatus?.open === false ? "Комната пока закрыта. Дождись ведущей." : "Бегайте вместе, оформите документ и победите Серёгу."}</p>
+                <h2>{booting ? "Проверяем вход…" : restoreUnavailable ? "Нет связи с комнатой" : needsHostPassword ? "Вход для ведущей" : hostMode ? "Соберём команду?" : "Приключение на четверых"}</h2>
+                <p>{needsHostPassword ? "Введи пароль ведущей. Пароль для участников задашь после входа." : hostMode ? "Войди, задай пароль для участников и открой комнату." : publicStatus?.open === false ? "Комната пока закрыта. Дождись ведущей." : "Бегайте вместе, оформите документ и победите Серёгу."}</p>
                 <label htmlFor="arcade-room-nickname">Твой ник</label><input id="arcade-room-nickname" value={nickname} maxLength={18} onChange={(event) => setNickname(event.target.value)} autoComplete="nickname" required disabled={busy || booting} />
                 <div className={styles.colorPicker}><span>Цвет героя</span><div>{COLORS.map((value, index) => <button key={value} type="button" aria-label={`Цвет героя ${COLOR_NAMES[index]}`} aria-pressed={color === value} disabled={busy} className={color === value ? styles.colorSelected : ""} onClick={() => setColor(value)}><PixelMark color={value} /></button>)}</div></div>
-                {(!hostMode || needsAdmin) && <><label htmlFor="arcade-room-password">{needsAdmin ? "Пароль ведущей" : "Пароль комнаты"}</label><input id="arcade-room-password" type="password" value={needsAdmin ? adminPassword : password} minLength={needsAdmin ? undefined : 6} maxLength={128} onChange={(event) => needsAdmin ? setAdminPassword(event.target.value) : setPassword(event.target.value)} autoComplete={needsAdmin ? "current-password" : "off"} required disabled={busy || booting} /></>}
+                {(!hostMode || needsHostPassword) && <><label htmlFor="arcade-room-password">{needsHostPassword ? "Пароль ведущей" : "Пароль комнаты"}</label><input id="arcade-room-password" type="password" value={needsHostPassword ? hostPassword : password} minLength={needsHostPassword ? undefined : 6} maxLength={128} onChange={(event) => needsHostPassword ? setHostPassword(event.target.value) : setPassword(event.target.value)} autoComplete={needsHostPassword ? "current-password" : "off"} required disabled={busy || booting} /></>}
                 {error && <p className={styles.formError} role="alert">{error}</p>}
                 {restoreUnavailable ? <button type="button" className={styles.primary} disabled={booting} onClick={() => { setBooting(true); setError(""); setRestoreAttempt((attempt) => attempt + 1); }}>Повторить подключение <span>↻</span></button> : <button type="submit" className={styles.primary} disabled={booting || joinDisabled}>{busy ? "Входим…" : hostMode ? "Войти как ведущая" : "Присоединиться"}<span>→</span></button>}
                 <small>{hostMode ? "Игру запускаешь ты" : `${publicStatus?.count ?? 0}/${limit} участников · нужен компьютер с клавиатурой`}</small>
