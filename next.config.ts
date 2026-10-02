@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/admin",
+        destination: "/chepuha/admin",
+        permanent: true,
+      },
+      {
         source: "/admin/:path*",
         destination: "/chepuha/admin/:path*",
         permanent: true,
