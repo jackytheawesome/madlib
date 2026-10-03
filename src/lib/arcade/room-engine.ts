@@ -1,4 +1,5 @@
 import { createGame, getInteractable } from "./engine";
+import { quizHealthMultiplier } from "./quiz-balance";
 import type { RoomGameState, RoomPlayer } from "./room-types";
 import {
   ANSWER_ZONES, BOSS_PLATFORMS, EMPTY_INPUT, QUIZ, QUIZ_PLATFORMS, TASK_PLATFORMS, WORLD,
@@ -12,6 +13,9 @@ const JUMP_SPEED = 740;
 const SHOT_COOLDOWN = 0.32;
 const INPUT_TIMEOUT_MS = 1000;
 const MAX_STEP = 0.05;
+
+/** Door on the document floor. The DOM draws it; the server owns its hit area. */
+export const TASK_EXIT = { x: 1138, y: 530, width: 62, height: 80 } as const;
 
 type Controls = {
   input: Input;
@@ -85,6 +89,26 @@ export function createRoomGame(hostId: string): RoomGameState {
   };
 }
 
+/** Migrates saved rooms from the earlier shared document-task format. */
+export function normalizeRoomTaskProgress(state: RoomGameState): void {
+  const sharedStep = state.taskStep === 1 ? 1 : state.taskStep === 2 ? 2 : 0;
+  for (const member of Object.values(state.players)) {
+    if (![0, 1, 2].includes(member.taskStep)) member.taskStep = sharedStep;
+    if (typeof member.taskExited !== "boolean") member.taskExited = state.phase === "task-complete";
+    if (member.taskExited) member.taskStep = 2;
+  }
+}
+
+function updateTaskCompletion(state: RoomGameState): void {
+  if (state.phase !== "task") return;
+  const participating = Object.values(state.players).filter((member) => member.connected);
+  if (participating.length === 0) return;
+  state.taskStep = Math.min(...participating.map((member) => member.taskStep));
+  if (participating.every((member) => member.taskExited)) {
+    setPhase(state, "task-complete", "Все участники сохранили документ и вышли. Можно перейти к вопросу!");
+  }
+}
+
 /** The server enforces room capacity, access and the lobby-only join policy. */
 export function addRoomPlayer(state: RoomGameState, id: string, nickname: string, color: string): boolean {
   if (!id || Object.hasOwn(state.players, id)) return false;
@@ -93,6 +117,7 @@ export function addRoomPlayer(state: RoomGameState, id: string, nickname: string
     value: {
       id, nickname: nickname.trim().slice(0, 18) || "Игрок", color,
       connected: true, player: createPlayer(Object.keys(state.players).length),
+      taskStep: 0, taskExited: false,
       quizChoice: null, quizCorrect: null,
     } satisfies RoomPlayer,
     enumerable: true, configurable: true, writable: true,
@@ -110,11 +135,13 @@ export function setRoomPlayerConnected(state: RoomGameState, id: string, connect
   controls.sequence = -1;
   controls.receivedAt = 0;
   state.players[id].player.vx = 0;
+  updateTaskCompletion(state);
 }
 
 /** Accepts buttons only. Call at least every 250ms while keys are held. */
 export function setRoomInput(state: RoomGameState, id: string, input: Input, sequence: number): boolean {
   if (!Object.hasOwn(state.players, id) || !state.players[id].connected || state.phase === "closed") return false;
+  if (["task", "task-complete"].includes(state.phase) && state.players[id].taskExited) return false;
   if (!Number.isSafeInteger(sequence) || sequence < 0) return false;
   if (!input || Object.keys(EMPTY_INPUT).some((key) => typeof input[key as keyof Input] !== "boolean")) return false;
   const controls = controlsOf(state, id);
@@ -146,7 +173,7 @@ export function projectPlayerGame(state: RoomGameState, id: string): GameState |
   return {
     phase: state.phase, paused: state.paused, time: state.time, phaseTime: state.phaseTime,
     nickname: member.nickname, color: member.color, player: member.player,
-    taskStep: state.taskStep, quizChoice: member.quizChoice, quizCorrect: member.quizCorrect,
+    taskStep: member.taskStep, quizChoice: member.quizChoice, quizCorrect: member.quizCorrect,
     attempt: state.attempt, boss: state.boss, projectiles: state.projectiles,
     lastShot: -SHOT_COOLDOWN, nextProjectileId: state.nextProjectileId,
     previousInput: { ...EMPTY_INPUT }, notice: state.notice,
@@ -184,8 +211,7 @@ function enterBoss(state: RoomGameState, retry: boolean): void {
   state.attempt = retry ? state.attempt + 1 : 1;
   if (!retry) {
     state.bossParticipantCount = Math.max(1, Object.values(state.players).filter((member) => member.connected).length);
-    const correctRatio = state.quizTotal > 0 ? state.quizCorrectCount / state.quizTotal : 0;
-    state.bossBaseHp = Math.round(48 * state.bossParticipantCount * (1 - 0.3 * correctRatio));
+    state.bossBaseHp = Math.round(48 * state.bossParticipantCount * quizHealthMultiplier(state.quizCorrectCount, state.quizTotal));
   }
   const maxHp = Math.max(10 * state.bossParticipantCount, Math.round(state.bossBaseHp * 0.75 ** (state.attempt - 1)));
   Object.values(state.players).forEach((member, index) => { member.player = createPlayer(index); });
@@ -207,6 +233,8 @@ export function commandRoomGame(state: RoomGameState, command: Command): void {
     state.players = players;
     Object.values(players).forEach((member, index) => {
       member.player = createPlayer(index);
+      member.taskStep = 0;
+      member.taskExited = false;
       member.quizChoice = member.quizCorrect = null;
     });
     resetControls(state);
@@ -226,9 +254,14 @@ export function commandRoomGame(state: RoomGameState, command: Command): void {
     return;
   }
   if (command === "start" && state.phase === "lobby") {
-    Object.values(state.players).forEach((member, index) => { member.player = createPlayer(index); });
+    Object.values(state.players).forEach((member, index) => {
+      member.player = createPlayer(index);
+      member.taskStep = 0;
+      member.taskExited = false;
+    });
+    state.taskStep = 0;
     state.paused = false;
-    setPhase(state, "task", "Доберитесь до кнопки «Заголовок» и нажмите E.");
+    setPhase(state, "task", "Каждый оформляет заголовок, сохраняет документ и выходит через дверь справа.");
   } else if (command === "reveal" && state.phase === "quiz") {
     revealQuiz(state);
   } else if (command === "retry" && (state.phase === "boss" || state.phase === "defeat")) {
@@ -239,6 +272,11 @@ export function commandRoomGame(state: RoomGameState, command: Command): void {
   } else if (command === "skip") {
     if (state.phase === "task") {
       state.taskStep = 2;
+      for (const member of Object.values(state.players)) {
+        member.taskStep = 2;
+        member.taskExited = true;
+        member.player.vx = member.player.vy = 0;
+      }
       setPhase(state, "task-complete", "Задача пропущена ведущей. Можно перейти к вопросу.");
     } else if (state.phase === "task-complete") enterQuiz(state);
     else if (state.phase === "quiz") revealQuiz(state);
@@ -251,12 +289,31 @@ export function commandRoomGame(state: RoomGameState, command: Command): void {
   }
 }
 
-export function interactRoomPlayer(state: RoomGameState, id: string): void {
+/** Personal document action, validated against the authoritative avatar position. */
+export function getRoomInteractable(state: RoomGameState, id: string): 0 | 1 | 2 | null {
   const game = projectPlayerGame(state, id);
-  if (!game || !state.players[id].connected || game.player.hp <= 0 || getInteractable(game) === null) return;
-  state.taskStep += 1;
-  if (state.taskStep === 2) setPhase(state, "task-complete", "Заголовок оформлен, документ сохранён. Задача выполнена!");
-  else state.notice = "Отлично! Теперь доберитесь до «Сохранить» и нажмите E.";
+  if (!game || !state.players[id].connected || state.players[id].taskExited
+      || game.phase !== "task" || game.paused || game.player.hp <= 0) return null;
+  if (game.taskStep < 2) return getInteractable(game) as 0 | 1 | null;
+  const player = game.player;
+  const center = player.x + player.width / 2;
+  const nearDoor = center >= TASK_EXIT.x - 26 && center <= TASK_EXIT.x + TASK_EXIT.width;
+  const onFloor = player.grounded && Math.abs(player.y + player.height - FLOOR_Y) < 1;
+  return nearDoor && onFloor ? 2 : null;
+}
+
+export function interactRoomPlayer(state: RoomGameState, id: string): void {
+  const action = getRoomInteractable(state, id);
+  if (action === null) return;
+  const member = state.players[id];
+  if (action === 2) {
+    member.taskExited = true;
+    member.player.vx = member.player.vy = 0;
+    releaseControls(controlsOf(state, id));
+  } else {
+    member.taskStep = action === 0 ? 1 : 2;
+  }
+  updateTaskCompletion(state);
 }
 
 function platformsFor(phase: Phase) {
@@ -393,7 +450,8 @@ export function stepRoomGame(state: RoomGameState, dtSeconds: number): void {
   for (const member of Object.values(state.players)) {
     const input = effectiveInputs.get(member.id)!;
     const controls = controlsOf(state, member.id);
-    if (member.connected && member.player.hp > 0) {
+    if (member.connected && member.player.hp > 0
+        && !(["task", "task-complete"].includes(state.phase) && member.taskExited)) {
       movePlayer(state, member.player, controls, input, dt);
       if (state.phase === "task" && input.interact && !controls.previousInput.interact) interactRoomPlayer(state, member.id);
       if (state.phase === "quiz") {

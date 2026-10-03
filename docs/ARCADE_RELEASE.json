@@ -1,12 +1,20 @@
 {
-  "deploymentUrl": "https://madlib-l8zbrf9l7-jackytheawesomes-projects.vercel.app",
+  "deploymentUrl": "https://madlib-plznkiu36-jackytheawesomes-projects.vercel.app",
   "vercelOrigin": "https://chepuha-arcade-demo.vercel.app",
   "gameUrl": "https://chepuha-arcade-demo.madlib.workers.dev/arcade",
   "hostUrl": "https://chepuha-arcade-demo.madlib.workers.dev/arcade?host=1",
   "backend": "https://chepuha-arcade-demo.madlib.workers.dev/parties/arcade/demo",
   "status": "READY",
   "fourPlayerCheck": "passed",
+  "fourPlayerCheckEnvironment": "local-cloudflare",
   "hostLoginCheck": "passed",
-  "checkedAt": "2026-10-02T16:13:50.138Z",
-  "room": "closed"
+  "hostLoginCheckEnvironment": "local-cloudflare",
+  "checkedAt": "2026-10-03T12:01:43.000Z",
+  "previousRemoteCheckedAt": "2026-10-02T16:13:50.138Z",
+  "publicPageCheck": "passed",
+  "publicSessionRestoreCheck": "passed",
+  "paletteSize": 12,
+  "taskProgress": "personal-with-exit",
+  "workerVersionId": "8c2b107b-bef3-4426-880e-e74ddbed43a7",
+  "room": "open"
 }

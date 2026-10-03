@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import type * as Party from "partykit/server";
 import ArcadeServer from "../party/arcade";
 import { issueTicket, verifyTicket } from "../src/lib/arcade/auth";
+import { addRoomPlayer, TASK_EXIT } from "../src/lib/arcade/room-engine";
+import type { RoomGameState } from "../src/lib/arcade/room-types";
+import { STATIONS } from "../src/lib/arcade/types";
 
 const secret = crypto.randomUUID() + crypto.randomUUID();
 const password = crypto.randomUUID();
@@ -105,6 +108,27 @@ async function main() {
     const late = await server.onRequest(request({ action: "join", nickname: "Поздний", color: "#fedcba", password }));
     check("new players are blocked after the game starts", () => assert.equal(late.status, 409));
     const id = admissions[0].playerId;
+    Object.assign(server.game.players[id].player, { x: STATIONS[1].x, y: STATIONS[1].y + STATIONS[1].height - 46 });
+    await command(guests[0], { type: "interact", station: "save" });
+    assert.equal(server.game.players[id].taskStep, 0);
+    Object.assign(server.game.players[id].player, { x: STATIONS[0].x, y: STATIONS[0].y + STATIONS[0].height - 46 });
+    await command(guests[0], { type: "interact", station: "heading" });
+    assert.equal(server.game.players[id].taskStep, 1);
+    Object.assign(server.game.players[id].player, { x: TASK_EXIT.x, y: 564, grounded: true });
+    await command(guests[0], { type: "interact", station: "exit" });
+    assert.equal(server.game.players[id].taskExited, false);
+    Object.assign(server.game.players[id].player, { x: STATIONS[1].x, y: STATIONS[1].y + STATIONS[1].height - 46 });
+    await command(guests[0], { type: "interact", station: "save" });
+    assert.equal(server.game.players[id].taskStep, 2);
+    await command(guests[0], { type: "interact", station: "exit" });
+    assert.equal(server.game.players[id].taskExited, false);
+    Object.assign(server.game.players[id].player, { x: TASK_EXIT.x, y: 564, grounded: true });
+    await command(guests[0], { type: "interact", station: "exit" });
+    check("the protocol validates each player's task order and personal floor exit", () => {
+      assert.equal(server.game.players[id].taskExited, true);
+      assert.equal(server.game.players.host.taskStep, 0);
+      assert.equal(server.game.phase, "task");
+    });
     server.game.players[id].player.x = 350;
     server.game.players[id].player.hp = 2;
     await disconnect(guests[0]);
@@ -114,6 +138,7 @@ async function main() {
     guests[0] = reconnect;
     check("a reconnect restores the same avatar and health during play", () => {
       assert.equal(server.game.players[id].player.x, 350); assert.equal(server.game.players[id].player.hp, 2);
+      assert.equal(server.game.players[id].taskStep, 2); assert.equal(server.game.players[id].taskExited, true);
     });
     await disconnect(host);
     const absent = await server.onRequest(request({ action: "join", nickname: "Гость", color: "#fedcba", password }));
@@ -142,6 +167,24 @@ async function main() {
     const reloaded = new ArcadeServer(room);
     await reloaded.onStart();
     check("manual closure is persisted across server restarts", () => { assert.equal(reloaded.open, false); assert.equal(reloaded.game.phase, "closed"); });
+    const oldRoom = structuredClone(records.get("arcade-room-v1")) as { game: RoomGameState; open: boolean };
+    oldRoom.open = true;
+    oldRoom.game.phase = "task";
+    oldRoom.game.taskStep = 1;
+    addRoomPlayer(oldRoom.game, "offline", "Вернусь", "#fedcba");
+    for (const member of Object.values(oldRoom.game.players)) {
+      const oldMember = member as unknown as Record<string, unknown>;
+      delete oldMember.taskStep;
+      delete oldMember.taskExited;
+    }
+    const migrationRoom = { ...room, storage: { get: async () => structuredClone(oldRoom), put: async () => {} } } as unknown as Party.Room;
+    const migrated = new ArcadeServer(migrationRoom);
+    await migrated.onStart();
+    check("persisted shared-task rooms migrate without deleting participants or completing on restart", () => {
+      assert.equal(migrated.game.phase, "task"); assert.equal(migrated.game.paused, true);
+      assert.equal(Object.keys(migrated.game.players).length, 2);
+      assert.ok(Object.values(migrated.game.players).every((member) => !member.connected && member.taskStep === 1 && !member.taskExited));
+    });
     console.log(`Arcade server: ${checks} protocol checks passed.`);
   } finally {
     for (const connection of connections.values()) await disconnect(connection);

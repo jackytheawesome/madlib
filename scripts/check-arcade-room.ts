@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {
-  addRoomPlayer, commandRoomGame, createRoomGame, interactRoomPlayer, projectPlayerGame,
+  addRoomPlayer, commandRoomGame, createRoomGame, getRoomInteractable, interactRoomPlayer, normalizeRoomTaskProgress, projectPlayerGame, TASK_EXIT,
   setRoomInput, setRoomPlayerConnected, stepRoomGame,
 } from "../src/lib/arcade/room-engine";
 import type { RoomGameState } from "../src/lib/arcade/room-types";
@@ -27,6 +27,17 @@ function room(count = 4): RoomGameState {
 
 function ticks(state: RoomGameState, count: number): void {
   for (let frame = 0; frame < count; frame += 1) stepRoomGame(state, FRAME);
+}
+
+function finishPersonalTask(state: RoomGameState, id: string, exit = true): void {
+  for (const station of STATIONS) {
+    Object.assign(state.players[id].player, { x: station.x, y: station.y + station.height - 46, grounded: true });
+    interactRoomPlayer(state, id);
+  }
+  if (exit) {
+    Object.assign(state.players[id].player, { x: TASK_EXIT.x, y: 610 - 46, grounded: true });
+    interactRoomPlayer(state, id);
+  }
 }
 
 function quizRoom(answers: Array<number | null> = [1, 1, 0, null]): RoomGameState {
@@ -114,7 +125,8 @@ check("quick down/up packets survive until a server tick for movement, jump, E a
   setRoomInput(state, "player-b", input({ interact: true }), 0);
   setRoomInput(state, "player-b", input(), 1);
   stepRoomGame(state, FRAME);
-  assert.equal(state.taskStep, 1);
+  assert.equal(state.players["player-b"].taskStep, 1);
+  assert.equal(state.players.host.taskStep, 0);
 
   const fight = bossRoom();
   setRoomInput(fight, "host", input({ shoot: true }), 0);
@@ -148,7 +160,7 @@ check("inputs expire after one second of real time even if game time is paused",
   }
 });
 
-check("two players at the same task button cannot accidentally complete both steps", () => {
+check("each player must personally format the heading before saving the document", () => {
   const state = room();
   commandRoomGame(state, "start");
   for (const id of IDS.slice(0, 2)) {
@@ -157,14 +169,100 @@ check("two players at the same task button cannot accidentally complete both ste
     setRoomInput(state, id, input({ interact: true }), 0);
   }
   stepRoomGame(state, FRAME);
-  assert.equal(state.taskStep, 1);
+  assert.deepEqual(IDS.map((id) => state.players[id].taskStep), [1, 1, 0, 0]);
+  assert.equal(projectPlayerGame(state, "host")?.taskStep, 1);
+  assert.equal(projectPlayerGame(state, "player-c")?.taskStep, 0);
   assert.equal(state.phase, "task");
   interactRoomPlayer(state, "missing");
   const station = STATIONS[1];
   Object.assign(state.players["player-c"].player, { x: station.x, y: station.y + station.height - 46 });
   interactRoomPlayer(state, "player-c");
-  assert.equal(state.taskStep, 2);
+  assert.equal(state.players["player-c"].taskStep, 0, "another player's heading does not unlock save");
+  Object.assign(state.players.host.player, { x: station.x, y: station.y + station.height - 46 });
+  interactRoomPlayer(state, "host");
+  assert.equal(state.players.host.taskStep, 2);
+  assert.equal(state.players.host.taskExited, false);
+  assert.equal(state.phase, "task", "save still requires a personal exit");
+});
+
+check("the exit requires both personal steps, floor contact, proximity and an unpaused room", () => {
+  const state = room();
+  commandRoomGame(state, "start");
+  Object.assign(state.players.host.player, { x: TASK_EXIT.x, y: 564, grounded: true });
+  assert.equal(getRoomInteractable(state, "host"), null);
+  interactRoomPlayer(state, "host");
+  assert.equal(state.players.host.taskExited, false);
+  finishPersonalTask(state, "host", false);
+  assert.equal(getRoomInteractable(state, "host"), null, "save platform is far from the floor exit");
+  Object.assign(state.players.host.player, { x: TASK_EXIT.x, y: 564, grounded: false });
+  assert.equal(getRoomInteractable(state, "host"), null);
+  state.players.host.player.grounded = true;
+  commandRoomGame(state, "pause");
+  assert.equal(getRoomInteractable(state, "host"), null);
+  commandRoomGame(state, "resume");
+  assert.equal(getRoomInteractable(state, "host"), 2);
+  interactRoomPlayer(state, "host");
+  assert.equal(state.players.host.taskExited, true);
+  assert.equal(state.phase, "task", "one completed participant does not finish the others");
+  assert.equal(setRoomInput(state, "host", input({ right: true }), 0), false);
+  const x = state.players.host.player.x;
+  ticks(state, 3);
+  assert.equal(state.players.host.player.x, x);
+  IDS.slice(1).forEach((id) => finishPersonalTask(state, id));
   assert.equal(state.phase, "task-complete");
+  assert.ok(IDS.every((id) => state.players[id].taskExited));
+  commandRoomGame(state, "next");
+  assert.equal(setRoomInput(state, "host", input({ right: true }), 1), true, "quiz restores all avatars");
+});
+
+check("offline participants do not block exits and reconnect retains each participant's progress", () => {
+  const state = room(3);
+  commandRoomGame(state, "start");
+  finishPersonalTask(state, "host");
+  const heading = STATIONS[0];
+  Object.assign(state.players["player-b"].player, { x: heading.x, y: heading.y + heading.height - 46 });
+  interactRoomPlayer(state, "player-b");
+  setRoomPlayerConnected(state, "player-b", false);
+  assert.equal(state.phase, "task");
+  setRoomPlayerConnected(state, "player-b", true);
+  assert.equal(state.players["player-b"].taskStep, 1);
+  assert.equal(state.players["player-b"].taskExited, false);
+  setRoomPlayerConnected(state, "player-b", false);
+  finishPersonalTask(state, "player-c");
+  assert.equal(state.phase, "task-complete");
+  assert.equal(state.players["player-b"].taskStep, 1);
+  const empty = room(1);
+  commandRoomGame(empty, "start");
+  setRoomPlayerConnected(empty, "host", false);
+  assert.equal(empty.phase, "task", "zero online participants does not complete the task");
+});
+
+check("disconnecting the last unfinished participant completes an otherwise finished document map", () => {
+  const state = room(2);
+  commandRoomGame(state, "start");
+  finishPersonalTask(state, "host");
+  assert.equal(state.phase, "task");
+  setRoomPlayerConnected(state, "player-b", false);
+  assert.equal(state.phase, "task-complete");
+});
+
+check("old shared-task snapshots migrate to finite personal steps and keep completed maps complete", () => {
+  for (const phase of ["task", "task-complete"] as const) {
+    const state = room(2);
+    state.phase = phase;
+    state.taskStep = phase === "task" ? 1 : 2;
+    for (const member of Object.values(state.players)) {
+      const legacy = member as unknown as Record<string, unknown>;
+      delete legacy.taskStep;
+      delete legacy.taskExited;
+    }
+    normalizeRoomTaskProgress(state);
+    assert.deepEqual(Object.values(state.players).map((member) => member.taskStep), phase === "task" ? [1, 1] : [2, 2]);
+    assert.ok(Object.values(state.players).every((member) => member.taskExited === (phase === "task-complete")));
+    const frozen = JSON.stringify(state);
+    normalizeRoomTaskProgress(state);
+    assert.equal(JSON.stringify(state), frozen, "migration is idempotent");
+  }
 });
 
 check("quiz votes are personal, jumping clears a vote and reveal freezes all choices", () => {
@@ -185,16 +283,16 @@ check("quiz votes are personal, jumping clears a vote and reveal freezes all cho
 });
 
 check("four-player boss health uses the frozen correct-answer ratio and preserves solo balance", () => {
-  assert.equal(bossRoom([null]).boss.hp, 48);
+  assert.equal(bossRoom([null]).boss.hp, 62);
   assert.equal(bossRoom([QUIZ.correct]).boss.hp, 34);
-  assert.equal(bossRoom([null, null, null, null]).boss.hp, 192);
-  assert.equal(bossRoom([1, 1, 0, null]).boss.hp, 163);
+  assert.equal(bossRoom([null, null, null, null]).boss.hp, 250);
+  assert.equal(bossRoom([1, 1, 0, null]).boss.hp, 192);
   assert.equal(bossRoom([1, 1, 1, 1]).boss.hp, 134);
   const state = bossRoom();
   setRoomPlayerConnected(state, "player-d", false);
   commandRoomGame(state, "retry");
   assert.equal(state.bossParticipantCount, 4);
-  assert.equal(state.boss.maxHp, 122);
+  assert.equal(state.boss.maxHp, 144);
   for (let count = 0; count < 30; count += 1) commandRoomGame(state, "retry");
   assert.equal(state.boss.maxHp, 40);
 });
@@ -248,7 +346,7 @@ check("only the last online player's death defeats the team; retry revives every
   assert.equal(state.phase, "boss");
   assert.deepEqual(IDS.map((id) => state.players[id].player.hp), [3, 3, 3, 3]);
   assert.equal(state.attempt, 2);
-  assert.equal(state.boss.maxHp, 122);
+  assert.equal(state.boss.maxHp, 144);
 });
 
 check("same-frame boss spread deals only one damage per player and invulnerability is personal", () => {
@@ -365,6 +463,8 @@ check("restart preserves roster and host identity; close blocks gameplay until a
   assert.equal(Object.keys(state.players).length, 4);
   assert.deepEqual(IDS.map((id) => state.players[id].player.hp), [3, 3, 3, 3]);
   assert.deepEqual(IDS.map((id) => state.players[id].quizChoice), [null, null, null, null]);
+  assert.deepEqual(IDS.map((id) => state.players[id].taskStep), [0, 0, 0, 0]);
+  assert.deepEqual(IDS.map((id) => state.players[id].taskExited), [false, false, false, false]);
   assert.equal(state.taskStep, 0);
   assert.equal(state.time, 0);
 });

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { commandGame, createGame, getInteractable, getPlatforms, interact, stepGame } from "../src/lib/arcade/engine";
+import { quizHealthAdjustment, quizHealthMultiplier } from "../src/lib/arcade/quiz-balance";
 import { ANSWER_ZONES, EMPTY_INPUT, QUIZ, STATIONS, type GameState, type Input, type Projectile } from "../src/lib/arcade/types";
 
 const FRAME = 1 / 60;
@@ -166,8 +167,26 @@ check("quiz starts unselected, locks revealed choice, and correct answer weakens
   commandGame(state, "next");
   assert.equal(state.phase, "boss");
   assert.equal(state.boss.hp, 34);
-  assert.equal(bossGame(0).boss.hp, 48);
-  assert.equal(bossGame(null).boss.hp, 48);
+  assert.equal(bossGame(0).boss.hp, 62, "a wrong answer gives the boss 30% more health");
+  assert.equal(bossGame(null).boss.hp, 62, "an unanswered vote is incorrect");
+});
+
+check("quiz majorities adjust boss health in both directions while ties and no votes are neutral", () => {
+  assert.equal(quizHealthMultiplier(0, 0), 1);
+  assert.equal(quizHealthAdjustment(0, 0), 0);
+  assert.equal(quizHealthMultiplier(2, 4), 1);
+  assert.equal(quizHealthAdjustment(2, 4), 0);
+  assert.equal(quizHealthMultiplier(0, 4), 1.3);
+  assert.equal(quizHealthAdjustment(0, 4), 30);
+  assert.equal(quizHealthMultiplier(4, 4), 0.7);
+  assert.equal(quizHealthAdjustment(4, 4), -30);
+  assert.equal(quizHealthAdjustment(1, 4), 15);
+  assert.equal(quizHealthAdjustment(3, 4), -15);
+  assert.equal(Math.round(192 * quizHealthMultiplier(1, 4)), 221);
+  assert.equal(Math.round(192 * quizHealthMultiplier(3, 4)), 163);
+  assert.equal(quizHealthAdjustment(3, 8), 8);
+  assert.equal(quizHealthAdjustment(5, 8), -8, "display rounding is symmetric");
+  assert.equal(quizHealthMultiplier(3, 8), 1.075, "HP calculation keeps the exact percentage");
 });
 
 check("jumping above a quiz platform does not select an answer", () => {

@@ -7,6 +7,8 @@ export type RoomPlayer = {
   color: string;
   connected: boolean;
   player: Player;
+  taskStep: 0 | 1 | 2;
+  taskExited: boolean;
   quizChoice: number | null;
   quizCorrect: boolean | null;
 };

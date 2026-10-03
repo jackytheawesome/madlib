@@ -188,18 +188,29 @@ export async function checkArcadeLive({ backend, frontend, secret, adminPassword
     assert.equal(host.state.phase, "lobby");
     passed("игрок не может запускать мероприятие вместо ведущей");
     host.command("start"); await host.wait((state) => state.phase === "task");
-    const runner = clients[1];
-    await jumpTo(runner, 190, 520);
-    await jumpTo(runner, 390, 440);
-    await jumpTo(runner, 470, 284);
-    runner.send({ type: "interact", station: "heading" });
-    await host.wait((state) => state.taskStep === 1);
-    await jumpTo(runner, 650, 362);
-    await moveTo(runner, 780);
-    await jumpTo(runner, 1000, 320);
-    runner.send({ type: "interact", station: "save" });
+    await Promise.all(clients.map(async (runner) => {
+      const id = runner.admission.playerId;
+      await jumpTo(runner, 190, 520);
+      await jumpTo(runner, 390, 440);
+      await jumpTo(runner, 470, 284);
+      runner.send({ type: "interact", station: "heading" });
+      await runner.wait((state) => state.players[id].taskStep === 1);
+      await jumpTo(runner, 650, 362);
+      await moveTo(runner, 780);
+      await jumpTo(runner, 1000, 320);
+      runner.send({ type: "interact", station: "save" });
+      await runner.wait((state) => state.players[id].taskStep === 2);
+      assert.equal(runner.state.players[id].taskExited, false);
+      await moveTo(runner, 1166);
+      await runner.wait((state) => {
+        const player = state.players[id].player;
+        return player.grounded && Math.abs(player.y + player.height - 610) < 1;
+      });
+      runner.send({ type: "interact", station: "exit" });
+      await runner.wait((state) => state.players[id].taskExited);
+    }));
     await Promise.all(clients.map((client) => client.wait((state) => state.phase === "task-complete" && state.taskStep === 2)));
-    passed("герой проходит настоящий маршрут; документ обновляется у всех четырёх");
+    passed("все четыре героя лично оформляют заголовок, сохраняют документ и выходят через дверь");
 
     const old = clients[3]; const id = old.admission.playerId; const position = { ...old.player };
     old.close();
@@ -207,7 +218,8 @@ export async function checkArcadeLive({ backend, frontend, secret, adminPassword
     const reconnected = new PlayerClient(backend, old.admission); clients[3] = reconnected;
     await reconnected.wait((state) => state.players[id].connected);
     assert.equal(reconnected.player.x, position.x); assert.equal(reconnected.player.hp, position.hp);
-    passed("переподключение возвращает тот же ник, героя и здоровье");
+    assert.equal(reconnected.state.players[id].taskStep, 2); assert.equal(reconnected.state.players[id].taskExited, true);
+    passed("переподключение возвращает героя, здоровье и личное прохождение документа");
 
     const previousHost = host;
     const previousGuest = clients[1];
@@ -240,16 +252,16 @@ export async function checkArcadeLive({ backend, frontend, secret, adminPassword
     await host.wait((state) => Object.values(state.players).every((player) => player.quizChoice !== null));
     host.command("reveal"); await host.wait((state) => state.phase === "quiz-reveal");
     assert.equal(host.state.quizCorrectCount, 2); assert.equal(host.state.quizTotal, 4);
-    passed("четыре личных ответа дают общий бонус за два правильных");
+    passed("при двух верных и двух неверных ответах HP босса сохраняется без изменений");
     host.command("next"); await host.wait((state) => state.phase === "boss");
-    assert.equal(host.state.boss.hp, 163);
+    assert.equal(host.state.boss.hp, 192);
     host.command("pause"); await host.wait((state) => state.paused);
     const frozen = host.state.time;
     for (let index = 0; index < 3; index++) await host.nextState();
     assert.equal(host.state.time, frozen);
     host.command("resume"); await host.wait((state) => !state.paused);
     host.command("retry"); await host.wait((state) => state.attempt === 2);
-    assert.equal(host.state.boss.maxHp, 122);
+    assert.equal(host.state.boss.maxHp, 144);
     passed("пауза замораживает общую игру, повтор уменьшает HP босса");
     for (const client of clients) client.controls({ shoot: true });
     await Promise.all(clients.map((client) => client.wait((state) => state.phase === "victory", 20_000)));

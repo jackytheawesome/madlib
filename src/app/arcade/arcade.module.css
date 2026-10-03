@@ -93,6 +93,14 @@
 .savePanel p { font-size: .83cqw; color: #7c8d9b; margin-top: .5cqw; }
 .saveStation { background: #e0efe9; color: #3d725f; padding: 0 1.2cqw; border-color: #497b682e; }
 .mapCaption { text-align: center; font-size: .9cqw; color: #687f93; }
+.taskExit { position: absolute; z-index: 2; border: 0; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; background: transparent; color: #768499; font-family: ui-monospace, monospace; font-weight: 800; }
+.exitSign { font-size: .8cqw; line-height: 1.5; text-transform: uppercase; }
+.exitDoor { display: grid; place-items: center; width: 75%; height: 66%; background: #c1cad3; border: .4cqw solid #768499; border-bottom: 0; font-size: 2cqw; }
+.exitKey { position: absolute; bottom: 12%; font-size: .7cqw; }
+.exitUnlocked { color: #276b52; }
+.exitUnlocked .exitDoor { background: #b5e5cf; border-color: #41806a; }
+.exitNear .exitDoor { box-shadow: 0 0 0 .4cqw #69bd9455; background: #8cdbb9; }
+.completedMark { color: #87e3bf; }
 .quizScene { color: var(--game-text); background: #27314c; background-image: radial-gradient(ellipse at 50% 20%, #4f3c7955, transparent 70%); }
 .quizHeading { position: absolute; top: 7%; left: 15%; width: 70%; text-align: center; }
 .sceneEyebrow { color: #c3b0f3; font-size: .85cqw; font-weight: 750; letter-spacing: .13cqw; text-transform: uppercase; }
@@ -131,10 +139,10 @@
 .startCard p, .messageCard p { font-size: 11px; line-height: 1.7; color: #6b7586; margin: 0 0 18px; }
 .startCard label { display: block; font-size: 10px; color: #617088; font-weight: 700; margin-bottom: 7px; }
 .startCard input { width: 100%; border: 1px solid #78849b44; border-radius: 7px; background: #fff; padding: 11px 12px; color: #26334a; font-size: 13px; }
-.colorPicker { display: flex; align-items: center; justify-content: space-between; margin: 12px 0 19px; }
+.colorPicker { display: grid; justify-items: start; gap: 7px; min-width: 0; margin: 12px 0 19px; }
 .colorPicker > span { font-size: 10px; font-weight: 700; color: #617088; }
-.colorPicker > div { display: flex; gap: 4px; }
-.colorPicker button { background: transparent; border: 1px solid transparent; border-radius: 6px; width: 38px; min-height: 44px; display: grid; place-items: center; }
+.colorPicker > div { display: grid; grid-template-columns: repeat(auto-fit, 44px); gap: 4px; width: 100%; max-width: 284px; min-width: 0; }
+.colorPicker button { background: transparent; border: 1px solid transparent; border-radius: 6px; width: 44px; min-width: 44px; min-height: 44px; display: grid; place-items: center; }
 .colorPicker button svg { width: 15px; height: 19px; }
 .colorPicker button.colorSelected { background: #ded7ed; border-color: #aa98c5; }
 .primary { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px; min-height: 44px; padding: 12px 15px; background: var(--game-accent); color: #22193b; border: 1px solid transparent; border-radius: 8px; font-size: 12px; font-weight: 800; transition: background 140ms ease-out, transform 140ms ease-out; }
@@ -180,6 +188,13 @@
 .closeButton { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 44px; margin-top: 23px; padding: 10px 0; border: 0; background: transparent; color: #ae91a0; font-size: 10px; }
 .closeButton:disabled { color: #69798d; }
 .connectionPending i { background: var(--game-orange); }
+.roomCard { padding: 20px 24px; }
+.roomCard h2 { margin: 7px 0; line-height: 1.35; }
+.roomCard p { margin-bottom: 12px; }
+.joinFields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.joinFields > div { min-width: 0; }
+.roomCard .colorPicker { margin: 9px 0 12px; gap: 4px; }
+.roomCard small { margin-top: 9px; }
 .roomCard .primary { margin-top: 15px; }
 .roomCard input + label { margin-top: 13px; }
 .startCard .formError, .messageCard .formError { margin: 12px 0 0; color: #9a3f4e; font-size: 11px; line-height: 1.5; }
@@ -242,7 +257,6 @@
   .startCard p { display: none; }
   .startCard h2 { font-size: 17px; margin-top: 7px; }
   .colorPicker { margin: 6px 0; }
-  .colorPicker button { width: 33px; }
   .hostPanel { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {

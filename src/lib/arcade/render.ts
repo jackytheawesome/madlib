@@ -345,6 +345,7 @@ export function drawRoomGame(ctx: CanvasRenderingContext2D, state: RoomGameState
   const local = members.find((member) => member.id === localPlayerId);
   if (local) sorted.push(local);
   for (const member of sorted) {
+    if (["task", "task-complete"].includes(state.phase) && member.taskExited) continue;
     const game = projectPlayerGame(state, member.id)!;
     ctx.save();
     if (!member.connected) ctx.globalAlpha = 0.45;

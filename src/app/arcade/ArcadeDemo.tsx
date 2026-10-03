@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { commandGame, createGame, getInteractable, interact, stepGame } from "@/lib/arcade/engine";
 import { drawGame } from "@/lib/arcade/render";
+import { HERO_COLORS } from "@/lib/arcade/palette";
+import { quizHealthMultiplier } from "@/lib/arcade/quiz-balance";
 import { ANSWER_ZONES, EMPTY_INPUT, QUIZ, STATIONS, WORLD, type Command, type GameState, type Input, type Phase, type Rect } from "@/lib/arcade/types";
 import styles from "./arcade.module.css";
 
-const COLORS = ["#a899ff", "#61d6bd", "#ffb66b", "#ef8fae"];
 const KEY_INPUTS: Record<string, keyof Input> = {
   ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right",
   Space: "jump", ArrowUp: "jump", KeyW: "jump", KeyE: "interact", KeyF: "shoot",
@@ -40,7 +41,7 @@ export function PixelMark({ color = "currentColor" }: { color?: string }) {
   return <svg width="24" height="28" viewBox="0 0 24 28" fill={color} aria-hidden="true"><path d="M6 0h12v3h3v9h-3v3h3v9h-6v4H9v-4H3v-9h3v-3H3V3h3z" /><path d="M8 6h3v3H8zm7 0h3v3h-3z" fill="#172238" /></svg>;
 }
 
-export function DocumentScene({ view, onInteract }: { view: Pick<View, "taskStep" | "near" | "phase" | "paused">; onInteract: (station: number) => void }) {
+export function DocumentScene({ view, onInteract, exit }: { view: Pick<View, "taskStep" | "near" | "phase" | "paused">; onInteract: (station: number) => void; exit?: { rect: Rect; exited: boolean } }) {
   const heading = view.taskStep >= 1;
   const saved = view.taskStep >= 2;
   return <div className={styles.documentScene}>
@@ -55,7 +56,7 @@ export function DocumentScene({ view, onInteract }: { view: Pick<View, "taskStep
       <div className={styles.libraryItem}>▤ Заметки встречи</div>
       <div className={styles.libraryItem}>▤ Идеи команды</div>
       <div className={styles.libraryDivider} />
-      <span className={styles.sectionEyebrow}>Задача команды</span>
+      <span className={styles.sectionEyebrow}>{exit ? "Твоя задача" : "Задача команды"}</span>
       <p className={styles.libraryTask}>Оформить заголовок.<br />Сохранить документ.</p>
       <div className={`${styles.taskCheck} ${heading ? styles.checked : ""}`}><span>{heading ? "✓" : "1"}</span> Стиль «Заголовок»</div>
       <div className={`${styles.taskCheck} ${saved ? styles.checked : ""}`}><span>{saved ? "✓" : "2"}</span> Сохранение</div>
@@ -78,14 +79,21 @@ export function DocumentScene({ view, onInteract }: { view: Pick<View, "taskStep
     ><span className={styles.stationIcon}>H1</span><span>{heading ? "Применён" : "Заголовок"}</span><span className={styles.stationKey}>{heading ? "✓" : "E"}</span></button>
     <div className={styles.savePanel} style={position({ x: 934, y: 172, width: 216, height: 148 })}>
       <strong>{saved ? "Документ готов" : "Последний штрих"}</strong>
-      <p>{saved ? "Можно идти к вопросу" : "Сохрани изменения"}</p>
+      <p>{saved ? exit ? "Спустись к выходу" : "Можно идти к вопросу" : "Сохрани изменения"}</p>
     </div>
     <button
       className={`${styles.station} ${styles.saveStation} ${view.near === 1 ? styles.stationNear : ""} ${saved ? styles.stationDone : ""}`}
       style={position(STATIONS[1])} onClick={() => onInteract(1)} disabled={view.phase !== "task" || !heading || saved || view.paused}
       aria-label="Сохранить документ, когда герой рядом"
     ><span>{saved ? "Сохранено" : "Сохранить"}</span><span className={styles.stationKey}>{saved ? "✓" : "E"}</span></button>
-    <div className={styles.mapCaption} style={position({ x: 365, y: 574, width: 510, height: 28 })}>Прыгай по платформам к подсвеченной кнопке</div>
+    {exit && <button
+      className={`${styles.taskExit} ${saved ? styles.exitUnlocked : ""} ${view.near === 2 ? styles.exitNear : ""}`}
+      style={position(exit.rect)} onClick={() => onInteract(2)}
+      disabled={view.phase !== "task" || view.paused || !saved || exit.exited}
+      aria-label={saved ? "Выйти после выполнения задания, когда герой рядом" : "Выход закрыт: оформи заголовок и сохрани документ"}
+      title={saved ? "Подойди и нажми E" : "Сначала выполни обе задачи"}
+    ><span className={styles.exitSign}>Выход</span><span className={styles.exitDoor} aria-hidden="true">{saved ? "↗" : "×"}</span><span className={styles.exitKey}>{saved ? "E" : "закрыт"}</span></button>}
+    <div className={styles.mapCaption} style={position({ x: 365, y: 574, width: 510, height: 28 })}>{exit ? saved ? "Задание готово — спустись к выходу справа и нажми E" : "Оформи заголовок и сохрани документ, затем выйди справа" : "Прыгай по платформам к подсвеченной кнопке"}</div>
   </div>;
 }
 
@@ -103,7 +111,7 @@ function QuizScene({ view }: { view: View }) {
       style={position({ x: ANSWER_ZONES[index].x, y: 390, width: ANSWER_ZONES[index].width, height: 128 })}
     ><span className={styles.answerLetter}>{String.fromCharCode(65 + index)}</span><strong>{option}</strong><span className={styles.answerLabel}>{revealed && index === QUIZ.correct ? "✓ Правильный ответ" : view.quizChoice === index ? "Твой выбор" : "Встань сюда"}</span></div>)}
     <div className={styles.quizResult} style={position({ x: 320, y: 267, width: 560, height: 82 })}>
-      {revealed ? <><strong>{view.quizCorrect ? "Верно! −30% здоровья босса" : view.quizChoice === null ? "Ответ не выбран" : "В этот раз мимо"}</strong><span>{view.quizCorrect ? "Серёга начнёт бой с 34 HP вместо 48" : "Серёга начнёт бой с 48 HP. Победить всё равно можно."}</span></> : <><strong>{view.quizChoice === null ? "Выбери площадку" : `Выбран вариант ${String.fromCharCode(65 + view.quizChoice)}`}</strong><span>Правильный ответ ослабит босса</span></>}
+      {revealed ? <><strong>{view.quizCorrect ? "Верно! −30% здоровья босса" : "+30% здоровья босса"}</strong><span>{view.quizCorrect ? "Серёга начнёт бой с 34 HP вместо 48" : `${view.quizChoice === null ? "Без ответа — тоже ошибка." : "В этот раз мимо."} Серёга начнёт бой с 62 HP вместо 48.`}</span></> : <><strong>{view.quizChoice === null ? "Выбери площадку" : `Выбран вариант ${String.fromCharCode(65 + view.quizChoice)}`}</strong><span>Верный ответ ослабит босса, ошибка усилит</span></>}
     </div>
   </div>;
 }
@@ -119,15 +127,15 @@ function BossScene({ view }: { view: View }) {
 }
 
 export default function ArcadeDemo() {
-  const gameRef = useRef(createGame("Люда", COLORS[0]));
+  const gameRef = useRef(createGame("Люда", HERO_COLORS[0].value));
   const inputRef = useRef<Input>({ ...EMPTY_INPUT });
   const heldKeys = useRef(new Set<string>());
   const pendingPresses = useRef(new Set<keyof Input>());
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
-  const [view, setView] = useState<View>(() => viewOf(createGame("Люда", COLORS[0])));
+  const [view, setView] = useState<View>(() => viewOf(createGame("Люда", HERO_COLORS[0].value)));
   const [nickname, setNickname] = useState("Люда");
-  const [color, setColor] = useState(COLORS[0]);
+  const [color, setColor] = useState(HERO_COLORS[0].value);
   const [toast, setToast] = useState("");
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -259,13 +267,13 @@ export default function ArcadeDemo() {
               {view.phase === "lobby" && <div className={styles.overlay}><form className={styles.startCard} onSubmit={(event) => { event.preventDefault(); send("start"); }}>
                 <span className={styles.cardEyebrow}>Документы → вопрос → босс</span><h2>Готова к маленькому<br />приключению?</h2><p>Прыгай по интерфейсу, выполни задачу<br />и победи пиксельного Серёгу.</p>
                 <label htmlFor="arcade-nickname">Твой ник</label><input id="arcade-nickname" value={nickname} maxLength={18} onChange={(event) => setNickname(event.target.value)} autoComplete="off" />
-                <div className={styles.colorPicker}><span>Цвет героя</span><div>{COLORS.map((value, index) => <button key={value} type="button" aria-label={`Цвет героя ${["сиреневый", "мятный", "оранжевый", "розовый"][index]}`} aria-pressed={color === value} className={color === value ? styles.colorSelected : ""} style={{ "--swatch": value } as CSSProperties} onClick={() => setColor(value)}><PixelMark color={value} /></button>)}</div></div>
+                <div className={styles.colorPicker}><span>Цвет героя</span><div>{HERO_COLORS.map(({ value, name }) => <button key={value} type="button" aria-label={`Цвет героя ${name}`} aria-pressed={color === value} className={color === value ? styles.colorSelected : ""} onClick={() => setColor(value)}><PixelMark color={value} /></button>)}</div></div>
                 <button type="submit" className={styles.primary}>Начать уровень <span>→</span></button><small>Здесь ты и игрок, и ведущая</small>
               </form></div>}
               {view.paused && <div className={styles.overlay}><div className={styles.messageCard}><span className={styles.cardEyebrow}>Можно выдохнуть</span><h2>Пауза</h2><p>Игра замерла. Продолжим с того же места.</p><button className={styles.primary} onClick={() => send("resume")}>Продолжить →</button></div></div>}
               {view.phase === "closed" && <div className={styles.overlay}><div className={styles.messageCard}><span className={styles.cardEyebrow}>До следующего раза</span><h2>Репетиция закрыта</h2><p>Можно открыть её заново<br />и попробовать другой маршрут.</p><button className={styles.primary} onClick={() => send("restart")}>Открыть заново →</button></div></div>}
               {view.phase === "victory" && <div className={styles.resultBanner}><span>✦</span><div><strong>Серёга повержен!</strong><p>Документ готов. Можно праздновать.</p></div><button onClick={() => send("restart")}>Ещё раз ↗</button></div>}
-              {view.phase === "defeat" && <div className={`${styles.resultBanner} ${styles.defeatBanner}`}><span>×</span><div><strong>Пиу-пиу оказалось сильнее</strong><p>В следующей попытке у босса будет {Math.max(10, Math.round((view.quizCorrect ? 34 : 48) * 0.75 ** view.attempt))} HP.</p></div><button onClick={() => send("retry")}>Ещё попытка ↗</button></div>}
+              {view.phase === "defeat" && <div className={`${styles.resultBanner} ${styles.defeatBanner}`}><span>×</span><div><strong>Пиу-пиу оказалось сильнее</strong><p>В следующей попытке у босса будет {Math.max(10, Math.round(Math.round(48 * quizHealthMultiplier(view.quizCorrect ? 1 : 0, 1)) * 0.75 ** view.attempt))} HP.</p></div><button onClick={() => send("retry")}>Ещё попытка ↗</button></div>}
               {toast && <div className={styles.toast} role="status">{toast}</div>}
             </div>
             <div className={styles.gameBottom}><span><kbd>A</kbd><kbd>D</kbd> идти</span><span><kbd>Space</kbd> прыгать</span><span><kbd>E</kbd> действие</span><span><kbd>F</kbd> пиу-пиу</span><span><kbd>Esc</kbd> пауза</span></div>

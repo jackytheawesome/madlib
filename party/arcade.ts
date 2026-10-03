@@ -1,7 +1,7 @@
 import type * as Party from "partykit/server";
 import { issueTicket, verifyTicket, type ArcadeTicket } from "../src/lib/arcade/auth";
 import {
-  addRoomPlayer, commandRoomGame, createRoomGame, interactRoomPlayer,
+  addRoomPlayer, commandRoomGame, createRoomGame, getRoomInteractable, interactRoomPlayer, normalizeRoomTaskProgress,
   setRoomInput, setRoomPlayerConnected, stepRoomGame,
 } from "../src/lib/arcade/room-engine";
 import type { RoomGameState } from "../src/lib/arcade/room-types";
@@ -100,6 +100,9 @@ export default class ArcadeServer implements Party.Server {
       this.passwordHash = saved.passwordHash;
       this.passwordSalt = saved.passwordSalt;
       this.game = saved.game;
+      normalizeRoomTaskProgress(this.game);
+      // Reset presence together: incremental disconnects must not complete a restored task.
+      for (const member of Object.values(this.game.players)) member.connected = false;
       for (const id of Object.keys(this.game.players)) setRoomPlayerConnected(this.game, id, false);
       if (this.open) commandRoomGame(this.game, "pause");
       else commandRoomGame(this.game, "close");
@@ -214,7 +217,8 @@ export default class ArcadeServer implements Party.Server {
       return;
     }
     if (data.type === "interact") {
-      if (data.station !== STATIONS[this.game.taskStep]?.id) return;
+      const action = getRoomInteractable(this.game, identity.playerId);
+      if (action === null || data.station !== (action === 2 ? "exit" : STATIONS[action].id)) return;
       interactRoomPlayer(this.game, identity.playerId);
       this.broadcastState();
       await this.persist();

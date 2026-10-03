@@ -15,6 +15,7 @@ import {
   type Projectile,
   type Rect,
 } from "./types";
+import { quizHealthMultiplier } from "./quiz-balance";
 
 const FLOOR_Y = 610;
 const GRAVITY = 1500;
@@ -98,13 +99,13 @@ function revealQuiz(state: GameState) {
     "quiz-reveal",
     state.quizCorrect
       ? "Верно! У босса будет меньше здоровья."
-      : "Правильный ответ — стиль «Заголовок». Начинаем бой!",
+      : "Правильный ответ — стиль «Заголовок». У босса будет больше здоровья.",
   );
 }
 
 function enterBoss(state: GameState, retry: boolean) {
   state.attempt = retry ? state.attempt + 1 : 1;
-  const baseHp = state.quizCorrect ? 34 : 48;
+  const baseHp = Math.round(48 * quizHealthMultiplier(Number(state.quizCorrect), 1));
   const maxHp = Math.max(10, Math.round(baseHp * 0.75 ** (state.attempt - 1)));
   state.player = createPlayer();
   state.boss.hp = maxHp;

@@ -3,16 +3,15 @@
 import Link from "next/link";
 import PartySocket from "partysocket";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { getInteractable } from "@/lib/arcade/engine";
-import { projectPlayerGame } from "@/lib/arcade/room-engine";
+import { getRoomInteractable, projectPlayerGame, TASK_EXIT } from "@/lib/arcade/room-engine";
+import { HERO_COLORS } from "@/lib/arcade/palette";
+import { quizHealthAdjustment } from "@/lib/arcade/quiz-balance";
 import { drawRoomGame } from "@/lib/arcade/render";
 import type { RoomGameState } from "@/lib/arcade/room-types";
 import { ANSWER_ZONES, EMPTY_INPUT, QUIZ, STATIONS, WORLD, type Command, type Input, type Phase } from "@/lib/arcade/types";
 import { DocumentScene, PixelMark, position } from "./ArcadeDemo";
 import styles from "./arcade.module.css";
 
-const COLORS = ["#a899ff", "#61d6bd", "#ffb66b", "#ef8fae"];
-const COLOR_NAMES = ["сиреневый", "мятный", "оранжевый", "розовый"];
 const KEY_INPUTS: Record<string, keyof Input> = {
   ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right",
   Space: "jump", ArrowUp: "jump", KeyW: "jump", KeyE: "interact", KeyF: "shoot",
@@ -58,7 +57,9 @@ function RoomQuiz({ state, playerId }: { state: RoomGameState; playerId: string 
   const member = state.players[playerId];
   const choice = member?.quizChoice ?? null;
   const revealed = state.phase === "quiz-reveal";
-  const reduction = state.quizTotal ? Math.round(30 * state.quizCorrectCount / state.quizTotal) : 0;
+  const adjustment = quizHealthAdjustment(state.quizCorrectCount, state.quizTotal);
+  const healthLabel = adjustment === 0 ? "HP босса без изменений" : `${adjustment > 0 ? "+" : "−"}${Math.abs(adjustment)}% HP босса`;
+  const result = adjustment > 0 ? "Ошибок больше — босс стал сильнее." : adjustment < 0 ? "Правильных ответов больше — босс стал слабее." : "Здоровье босса осталось прежним.";
   return <div className={styles.quizScene}>
     <div className={styles.quizHeading}>
       <span className={styles.sceneEyebrow}>Один вопрос перед боем</span>
@@ -70,7 +71,7 @@ function RoomQuiz({ state, playerId }: { state: RoomGameState; playerId: string 
       style={position({ x: ANSWER_ZONES[index].x, y: 390, width: ANSWER_ZONES[index].width, height: 128 })}
     ><span className={styles.answerLetter}>{String.fromCharCode(65 + index)}</span><strong>{option}</strong><span className={styles.answerLabel}>{revealed && index === QUIZ.correct ? "✓ Правильный ответ" : choice === index ? "Твой выбор" : "Встань сюда"}</span></div>)}
     <div className={styles.quizResult} style={position({ x: 250, y: 267, width: 700, height: 82 })}>
-      {revealed ? <><strong>Верно ответили {state.quizCorrectCount} из {state.quizTotal} · −{reduction}% HP босса</strong><span>{member?.quizCorrect ? "Твой ответ помог команде!" : choice === null ? "Ты не выбрал ответ. В бою всё ещё можно помочь." : "В этот раз мимо. Команда всё равно получила свой бонус."}</span></> : <><strong>{choice === null ? "Выбери площадку" : `Твой выбор — ${String.fromCharCode(65 + choice)}`}</strong><span>Каждый правильный ответ ослабляет босса</span></>}
+      {revealed ? <><strong>Верно ответили {state.quizCorrectCount} из {state.quizTotal} · {healthLabel}</strong><span>{result} {member?.quizCorrect ? "Твой ответ помог команде!" : choice === null ? "Без ответа — тоже ошибка." : "В бою ещё можно помочь."}</span></> : <><strong>{choice === null ? "Выбери площадку" : `Твой выбор — ${String.fromCharCode(65 + choice)}`}</strong><span>Большинство ответов решит: босс станет слабее или сильнее</span></>}
     </div>
   </div>;
 }
@@ -95,11 +96,10 @@ export default function ArcadeRoom({ hostMode = false }: { hostMode?: boolean })
   const [publicStatus, setPublicStatus] = useState<PublicStatus | null>(null);
   const [network, setNetwork] = useState<Network>("connecting");
   const [nickname, setNickname] = useState("");
-  const [color, setColor] = useState(COLORS[0]);
+  const [color, setColor] = useState(HERO_COLORS[0].value);
   const [password, setPassword] = useState("");
   const [guestPassword, setGuestPassword] = useState("");
   const [hostPassword, setHostPassword] = useState("");
-  const [needsHostPassword, setNeedsHostPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
@@ -279,10 +279,9 @@ export default function ArcadeRoom({ hostMode = false }: { hostMode?: boolean })
 
   function station(index: number) {
     const current = stateRef.current;
-    const game = current ? projectPlayerGame(current, localIdRef.current) : null;
-    if (!game || !onlineRef.current) return;
-    if (getInteractable(game) !== index) announce("Подойди героем к кнопке по платформам — появится подсказка E.");
-    else transmit({ type: "interact", station: STATIONS[index]?.id });
+    if (!current || !onlineRef.current) return;
+    if (getRoomInteractable(current, localIdRef.current) !== index) announce("Подойди героем к кнопке — появится подсказка E.");
+    else transmit({ type: "interact", station: index === 2 ? "exit" : STATIONS[index]?.id });
     stageRef.current?.focus();
   }
 
@@ -308,16 +307,14 @@ export default function ArcadeRoom({ hostMode = false }: { hostMode?: boolean })
     if (booting || restoreUnavailable || busy) return;
     setBusy(true); setError("");
     try {
-      if (needsHostPassword) {
+      if (hostMode) {
         const login = await fetch("/api/arcade/host-login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: hostPassword }) });
         if (!login.ok) throw new Error("Пароль ведущей не подошёл.");
-        setHostPassword(""); setNeedsHostPassword(false);
       }
       const response = await fetch("/api/arcade/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: hostMode ? "host" : "player", nickname: nickname.trim(), color, ...(hostMode ? {} : { password }) }) });
       const data = await response.json().catch(() => ({}));
-      if (hostMode && response.status === 401) { setNeedsHostPassword(true); return; }
       if (!response.ok || !validSession(data)) throw new Error(data.error || data.message || "Не удалось войти в комнату.");
-      setSession(data); setNetwork("connecting"); setPassword("");
+      setSession(data); setNetwork("connecting"); setPassword(""); setHostPassword("");
     } catch (failure) { setError(failure instanceof Error ? failure.message : "Нет связи. Попробуй ещё раз."); }
     finally { setBusy(false); }
   }
@@ -335,6 +332,7 @@ export default function ArcadeRoom({ hostMode = false }: { hostMode?: boolean })
   const isHost = session?.role === "host";
   const online = network === "online" && !!state;
   const local = state && session ? projectPlayerGame(state, session.playerId) : null;
+  const localMember = state && session ? state.players[session.playerId] : null;
   const phase = state?.phase ?? publicStatus?.phase ?? "lobby";
   const paused = state?.paused ?? false;
   const taskScene = ["lobby", "task", "task-complete", "closed"].includes(phase);
@@ -353,7 +351,7 @@ export default function ArcadeRoom({ hostMode = false }: { hostMode?: boolean })
           : phase === "quiz-reveal" ? { label: "Начать бой", command: "next" }
             : phase === "defeat" ? { label: "Ещё попытка", command: "retry" } : null;
   const roomEditable = ["lobby", "closed"].includes(phase);
-  const joinDisabled = busy || !nickname.trim() || (!hostMode && (password.length < 6 || publicStatus?.open === false));
+  const joinDisabled = busy || !nickname.trim() || (hostMode ? !hostPassword : password.length < 6 || publicStatus?.open === false);
 
   return <div className={styles.shell}>
     <header className={styles.header}>
@@ -374,18 +372,20 @@ export default function ArcadeRoom({ hostMode = false }: { hostMode?: boolean })
               onKeyDown={(event) => keyboard(event, true)} onKeyUp={(event) => keyboard(event, false)} onBlur={clearInput}
               onClick={(event) => { if (!(event.target instanceof HTMLElement && event.target.closest("button, input"))) stageRef.current?.focus(); }}
             >
-              {taskScene && <DocumentScene view={{ phase, paused: paused || !online, taskStep: state?.taskStep ?? 0, near: local ? getInteractable(local) : null }} onInteract={station} />}
+              {taskScene && <DocumentScene view={{ phase, paused: paused || !online, taskStep: local?.taskStep ?? 0, near: state && session ? getRoomInteractable(state, session.playerId) : null }} onInteract={station} exit={{ rect: TASK_EXIT, exited: localMember?.taskExited ?? false }} />}
               {quizScene && state && session && <RoomQuiz state={state} playerId={session.playerId} />}
               {combatScene && state && <RoomBoss state={state} />}
               <canvas ref={canvasRef} width={WORLD.width} height={WORLD.height} className={styles.canvas} aria-hidden="true" />
 
               {!session && <div className={styles.overlay}><form className={`${styles.startCard} ${styles.roomCard}`} onSubmit={join}>
                 <span className={styles.cardEyebrow}>{hostMode ? "Комната ведущей" : "Документы → вопрос → босс"}</span>
-                <h2>{booting ? "Проверяем вход…" : restoreUnavailable ? "Нет связи с комнатой" : needsHostPassword ? "Вход для ведущей" : hostMode ? "Соберём команду?" : "Приключение на четверых"}</h2>
-                <p>{needsHostPassword ? "Введи пароль ведущей. Пароль для участников задашь после входа." : hostMode ? "Войди, задай пароль для участников и открой комнату." : publicStatus?.open === false ? "Комната пока закрыта. Дождись ведущей." : "Бегайте вместе, оформите документ и победите Серёгу."}</p>
-                <label htmlFor="arcade-room-nickname">Твой ник</label><input id="arcade-room-nickname" value={nickname} maxLength={18} onChange={(event) => setNickname(event.target.value)} autoComplete="nickname" required disabled={busy || booting} />
-                <div className={styles.colorPicker}><span>Цвет героя</span><div>{COLORS.map((value, index) => <button key={value} type="button" aria-label={`Цвет героя ${COLOR_NAMES[index]}`} aria-pressed={color === value} disabled={busy} className={color === value ? styles.colorSelected : ""} onClick={() => setColor(value)}><PixelMark color={value} /></button>)}</div></div>
-                {(!hostMode || needsHostPassword) && <><label htmlFor="arcade-room-password">{needsHostPassword ? "Пароль ведущей" : "Пароль комнаты"}</label><input id="arcade-room-password" type="password" value={needsHostPassword ? hostPassword : password} minLength={needsHostPassword ? undefined : 6} maxLength={128} onChange={(event) => needsHostPassword ? setHostPassword(event.target.value) : setPassword(event.target.value)} autoComplete={needsHostPassword ? "current-password" : "off"} required disabled={busy || booting} /></>}
+                <h2>{booting ? "Проверяем вход…" : restoreUnavailable ? "Нет связи с комнатой" : hostMode ? "Вход для ведущей" : "Приключение на четверых"}</h2>
+                <p>{hostMode ? "Пароль участников задашь после входа." : publicStatus?.open === false ? "Комната пока закрыта. Дождись ведущей." : "Оформите документ и победите Серёгу."}</p>
+                <div className={styles.joinFields}>
+                  <div><label htmlFor="arcade-room-nickname">Твой ник</label><input id="arcade-room-nickname" value={nickname} maxLength={18} onChange={(event) => setNickname(event.target.value)} autoComplete="nickname" required disabled={busy || booting} /></div>
+                  <div><label htmlFor="arcade-room-password">{hostMode ? "Пароль ведущей" : "Пароль комнаты"}</label><input id="arcade-room-password" type="password" value={hostMode ? hostPassword : password} minLength={hostMode ? undefined : 6} maxLength={128} onChange={(event) => hostMode ? setHostPassword(event.target.value) : setPassword(event.target.value)} autoComplete={hostMode ? "current-password" : "off"} required disabled={busy || booting} /></div>
+                </div>
+                <div className={styles.colorPicker}><span>Цвет героя</span><div>{HERO_COLORS.map(({ value, name }) => <button key={value} type="button" aria-label={`Цвет героя ${name}`} aria-pressed={color === value} disabled={busy} className={color === value ? styles.colorSelected : ""} onClick={() => setColor(value)}><PixelMark color={value} /></button>)}</div></div>
                 {error && <p className={styles.formError} role="alert">{error}</p>}
                 {restoreUnavailable ? <button type="button" className={styles.primary} disabled={booting} onClick={() => { setBooting(true); setError(""); setRestoreAttempt((attempt) => attempt + 1); }}>Повторить подключение <span>↻</span></button> : <button type="submit" className={styles.primary} disabled={booting || joinDisabled}>{busy ? "Входим…" : hostMode ? "Войти как ведущая" : "Присоединиться"}<span>→</span></button>}
                 <small>{hostMode ? "Игру запускаешь ты" : `${publicStatus?.count ?? 0}/${limit} участников · нужен компьютер с клавиатурой`}</small>
@@ -393,13 +393,14 @@ export default function ArcadeRoom({ hostMode = false }: { hostMode?: boolean })
 
               {session && !online && <div className={styles.overlay}><div className={styles.messageCard}><span className={styles.cardEyebrow}>Связь с комнатой</span><h2>{network === "reconnecting" ? "Возвращаемся в игру" : "Подключаемся…"}</h2><p>{process.env.NEXT_PUBLIC_ARCADE_HOST ? "Управление вернётся после подключения. Твой герой сохранён." : "Сервер комнаты ещё не настроен."}</p>{error && <p className={styles.formError} role="alert">{error}</p>}</div></div>}
 
-              {session && online && isHost && room?.open === false && <div className={styles.overlay}><form className={`${styles.startCard} ${styles.roomCard}`} onSubmit={(event) => { event.preventDefault(); roomAction("open"); }}><span className={styles.cardEyebrow}>Пульт ведущей</span><h2>Открой комнату</h2><p>Придумай пароль и передай участникам ссылку на эту страницу.</p><label htmlFor="arcade-guest-password">Пароль для участников</label><input id="arcade-guest-password" type="password" minLength={6} maxLength={128} autoComplete="new-password" value={guestPassword} onChange={(event) => setGuestPassword(event.target.value)} required />{error && <p className={styles.formError} role="alert">{error}</p>}<button className={styles.primary} disabled={guestPassword.length < 6}>Открыть комнату <span>→</span></button><small>До 4 участников вместе с ведущей</small></form></div>}
+              {session && online && isHost && room?.open === false && <div className={styles.overlay}><form className={`${styles.startCard} ${styles.roomCard}`} onSubmit={(event) => { event.preventDefault(); roomAction("open"); }}><span className={styles.cardEyebrow}>Пульт ведущей</span><h2>Открой комнату</h2><p>Придумай пароль и передай участникам <a href="/arcade" target="_blank" rel="noopener noreferrer">ссылку для игроков ↗</a>.</p><label htmlFor="arcade-guest-password">Пароль для участников</label><input id="arcade-guest-password" type="password" minLength={6} maxLength={128} autoComplete="new-password" value={guestPassword} onChange={(event) => setGuestPassword(event.target.value)} required />{error && <p className={styles.formError} role="alert">{error}</p>}<button className={styles.primary} disabled={guestPassword.length < 6}>Открыть комнату <span>→</span></button><small>До 4 участников вместе с ведущей</small></form></div>}
 
-              {session && online && room?.open && phase === "lobby" && <div className={styles.lobbyBanner}><strong>{isHost ? "Команда собирается" : "Ты в команде!"}</strong><span>{count}/{limit} участников · {isHost ? "запусти уровень, когда все готовы" : "ведущая скоро запустит уровень"}</span>{isHost && <button className={styles.primary} onClick={() => command("start")}>Начать уровень →</button>}</div>}
+              {session && online && !isHost && room?.open && phase === "lobby" && <div className={styles.lobbyBanner}><strong>Ты в команде!</strong><span>{count}/{limit} участников · ведущая скоро запустит уровень</span></div>}
               {session && online && paused && room?.open && <div className={styles.overlay}><div className={styles.messageCard}><span className={styles.cardEyebrow}>{room.hostOnline ? "Можно выдохнуть" : "Ждём ведущую"}</span><h2>Пауза</h2><p>{room.hostOnline ? "Игра замерла. Продолжим с того же места." : "Ведущая потеряла связь. Комната ждёт её возвращения."}</p>{isHost && <button className={styles.primary} onClick={() => command("resume")}>Продолжить →</button>}</div></div>}
               {online && phase === "victory" && <div className={styles.resultBanner}><span>✦</span><div><strong>Серёга повержен!</strong><p>Документ готов. Команда справилась.</p></div>{isHost && <button onClick={() => command("restart")}>Ещё раз ↗</button>}</div>}
               {online && phase === "defeat" && state && <div className={`${styles.resultBanner} ${styles.defeatBanner}`}><span>×</span><div><strong>Пиу-пиу оказалось сильнее</strong><p>В следующей попытке у босса будет {Math.max(10 * state.bossParticipantCount, Math.round(state.bossBaseHp * 0.75 ** state.attempt))} HP.</p></div>{isHost && <button onClick={() => command("retry")}>Ещё попытка ↗</button>}</div>}
               {online && phase === "boss" && local?.player.hp === 0 && <div className={styles.spectatorBanner} role="status">Твой герой отдыхает с глазами-крестиками. Болей за команду!</div>}
+              {online && taskScene && localMember?.taskExited && <div className={styles.spectatorBanner} role="status">✓ Ты выполнил задание и вышел. Ждём остальных — в квизе вернёшься на карту.</div>}
               {toast && <div className={styles.toast} role="status">{toast}</div>}
             </div>
             <div className={styles.gameBottom}><span><kbd>A</kbd><kbd>D</kbd> идти</span><span><kbd>Space</kbd> прыгать</span><span><kbd>E</kbd> действие</span><span><kbd>F</kbd> пиу-пиу</span>{isHost && <span><kbd>Esc</kbd> пауза</span>}</div>
@@ -423,7 +424,7 @@ export default function ArcadeRoom({ hostMode = false }: { hostMode?: boolean })
             {settings && <form className={styles.roomSettings} onSubmit={(event) => { event.preventDefault(); roomAction("password"); }}><label htmlFor="arcade-new-password">Новый пароль участников</label><input id="arcade-new-password" type="password" minLength={6} maxLength={128} autoComplete="new-password" value={guestPassword} onChange={(event) => setGuestPassword(event.target.value)} required /><p>Участникам потребуется войти заново.</p><button className={styles.primary} disabled={!online || !roomEditable || guestPassword.length < 6}>Изменить пароль →</button></form>}
           </>}
           {session && error && <p className={styles.panelError} role="alert">{error}</p>}
-          <div className={styles.participants}><span className={styles.panelLabel}>Участники <span>{session ? count : publicStatus?.count ?? 0}/{limit}</span></span>{members.map((member) => <div key={member.id} className={!member.connected ? styles.participantOffline : ""}><PixelMark color={member.color} /><strong>{member.nickname}</strong><span>{!member.connected ? "нет связи" : member.id === session?.playerId ? "ты" : member.id === state?.hostId ? "ведущая" : combatScene && member.player.hp === 0 ? "отдыхает" : "в игре"}</span></div>)}{!members.length && <p className={styles.emptyParticipants}>Здесь появится ваша команда</p>}</div>
+          <div className={styles.participants}><span className={styles.panelLabel}>Участники <span>{session ? count : publicStatus?.count ?? 0}/{limit}</span></span>{members.map((member) => <div key={member.id} className={!member.connected ? styles.participantOffline : ""}><PixelMark color={member.color} /><strong>{member.nickname}{member.taskExited && <span className={styles.completedMark} aria-label="Задание выполнено, игрок вышел"> ✓</span>}</strong><span>{!member.connected ? "нет связи" : taskScene && member.taskExited ? "готово" : member.id === session?.playerId ? "ты" : member.id === state?.hostId ? "ведущая" : combatScene && member.player.hp === 0 ? "отдыхает" : "в игре"}</span></div>)}{!members.length && <p className={styles.emptyParticipants}>Здесь появится ваша команда</p>}</div>
           {isHost && <button className={styles.closeButton} onClick={() => roomAction("close")} disabled={!online || !room?.open}>Закрыть комнату <span>↗</span></button>}
         </aside>
       </div>
